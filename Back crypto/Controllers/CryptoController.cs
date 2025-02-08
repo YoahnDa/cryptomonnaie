@@ -4,6 +4,7 @@ using AutoMapper;
 using Backend_Crypto.Dto;
 using Backend_Crypto.Interfaces;
 using Backend_Crypto.Data;
+using Backend_Crypto.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,21 +15,25 @@ namespace Backend_Crypto.Controllers
     public class CryptoController : ControllerBase
     {
         private readonly ICryptoRepository _cryptoRepository;
+        private readonly IHistoriqueRepository _historiqueRepository;
         private readonly IMapper _mapper;
+        private readonly AnalytiqueCryptoService _analyzer;
 
-        public CryptoController(ICryptoRepository cryptoRepository, IMapper mapper)
+        public CryptoController(ICryptoRepository cryptoRepository, IMapper mapper,IHistoriqueRepository historique, AnalytiqueCryptoService analytiqueCryptoService)
         {
             _cryptoRepository = cryptoRepository;
+            _analyzer = analytiqueCryptoService;
+            _historiqueRepository = historique;
             _mapper = mapper;
         }
 
         // GET: api/<Crypto>
         [HttpGet]
-        [ProducesResponseType(200,Type=typeof(IEnumerable<CryptoDto>))]
+        [ProducesResponseType(200,Type=typeof(IEnumerable<CryptoDtoAnalytique>))]
         [ProducesResponseType(400)]
         public IActionResult GetAllCrypto()
         {
-            var cryptos = _mapper.Map<List<CryptoDto>>(_cryptoRepository.GetCrypto());
+            var cryptos = _analyzer.getCrypto();
             if (!ModelState.IsValid)
             {
                 // Créer une liste d'erreurs à partir de ModelState
@@ -169,6 +174,30 @@ namespace Backend_Crypto.Controllers
                 return StatusCode(500, ModelState);
             }
             return Ok("Suppression effectué.");
-        } 
+        }
+
+        // GET api/<Crypto>/5
+        [HttpGet("historique/{id}")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<AnalytiqueHistoriqueDto>))]
+        [ProducesResponseType(404)]
+        public IActionResult GetHistoriquePrix(int id)
+        {
+            if (!_cryptoRepository.CryptoExist(id))
+                return NotFound();
+
+            var historique = _analyzer.getPrixCrypto(id);
+            if (!ModelState.IsValid)
+            {
+                // Créer une liste d'erreurs à partir de ModelState
+                var errors = ModelState
+                    .Where(e => e.Value.Errors.Count > 0)
+                    .Select(e => e.Value.Errors.First().ErrorMessage)
+                    .ToList();
+
+                // Retourner les erreurs avec un statut BadRequest
+                return BadRequest(new { errors });
+            }
+            return Ok(historique);
+        }
     }
 }

@@ -12,6 +12,8 @@ namespace Backend_Crypto.Interfaces
         ICollection<Transac> GetTransactionPortefeuille(Portefeuille portefeuille); 
         bool ValidationTransaction(Transac transac);
         bool Remove(Transac transac);
+        ICollection<Transac> GetTransactionByTypes(List<TypeTransaction> types);
+        ICollection<Transac> GetTransactionByTypesPortefeuille(List<TypeTransaction> types,int idPortefeuille);
         bool Save();
     }
 }

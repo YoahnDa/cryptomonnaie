@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Backend_Crypto.Dto
 {
-    public class TransactionDto
+    public class TransactionFirebaseDto
     {
         public int IdTransaction { get; set; }
 
@@ -13,6 +13,8 @@ namespace Backend_Crypto.Dto
         [Required]
         public Status State { get; set; } = Status.Waiting;
         public DateTime DateTransaction { get; set; } = DateTime.UtcNow;
-        public OrdreDto? Ordre { get; set; }
+        public int IdPortefeuille { get; set; }
+        public double fond { get; set; } = 0;
+        public PortefeuilleDto PortefeuilleOwner { get; set; } = new PortefeuilleDto();
     }
 }

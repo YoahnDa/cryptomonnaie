@@ -14,6 +14,8 @@ namespace Backend_Crypto.Models
         public string Nom { get; set; } = string.Empty;
         public ICollection<HistoriquePrix> Historiques { get; set; } = new List<HistoriquePrix>();
         public ICollection<StockPortefeuille> StockClient { get; set; } = new List<StockPortefeuille>();
+        public ICollection<Favoris> FavsClient { get; set; } = new List<Favoris>();
+        public ICollection<Ordre> Orders { get; set; } = new List<Ordre>();
 
     }
 }

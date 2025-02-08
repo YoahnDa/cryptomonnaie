@@ -76,3 +76,5 @@ temp/
 # Extensions spécifiques ASP.NET
 !appsettings.Production.json
 .env
+
+Back crypto/App_Data/firebase/credentials.json

@@ -22,4 +22,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+COPY App_Data/firebase/credentials.json /app/App_Data/firebase/credentials.json	
+
 ENTRYPOINT ["dotnet", "Backend_Crypto.dll"]

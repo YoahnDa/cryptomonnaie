@@ -12,6 +12,7 @@ namespace Backend_Crypto.Data
         public DbSet<Portefeuille> Portefeuilles { get; set; }
         public DbSet<StockPortefeuille> Stocks { get; set; }
         public DbSet<Transaction> Transac { get; set; }
+        public DbSet<Favoris> Favoris { get; set; }
         public DataContext(DbContextOptions<DataContext> options): base(options)
         {
 
@@ -60,11 +61,10 @@ namespace Backend_Crypto.Data
             modelBuilder.Entity<Ordre>()
                 .HasKey(o => o.IdOrdre);
             modelBuilder.Entity<Ordre>()
-                .Property(o => o.Type)
-                .HasConversion<string>();
-            modelBuilder.Entity<Ordre>()
-                .Property(o => o.State)
-                .HasConversion<string>();
+                .HasOne(o => o.CryptoOrdre)
+                .WithMany(c => c.Orders)
+                .HasForeignKey(o => o.IdCrypto)
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Ordre>()
                 .HasOne(o => o.Transac)
                 .WithOne(t => t.Ordre)
@@ -85,6 +85,8 @@ namespace Backend_Crypto.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<StockPortefeuille>()
+                .HasKey(s => s.IdStock);
+            modelBuilder.Entity<StockPortefeuille>()
                 .HasKey(p => new { p.IdPorteFeuille , p.IdCrypto });
             modelBuilder.Entity<StockPortefeuille>()
                 .HasOne(p => p.PorteFeuilleOwn)
@@ -95,6 +97,13 @@ namespace Backend_Crypto.Data
                 .HasOne(c => c.CryptoIn)
                 .WithMany(s => s.StockClient)
                 .HasForeignKey(c => c.IdCrypto)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Favoris>()
+                .HasKey(f => new { f.idCrypto, f.idUser });
+            modelBuilder.Entity<Favoris>()
+                .HasOne(f => f.Cryptos)
+                .WithMany(c => c.FavsClient)
+                .HasForeignKey(f => f.idCrypto)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

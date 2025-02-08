@@ -77,6 +77,22 @@ namespace Backend_Crypto.Migrations
                     b.ToTable("Cryptos");
                 });
 
+            modelBuilder.Entity("Backend_Crypto.Models.Favoris", b =>
+                {
+                    b.Property<int>("idCrypto")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("idUser")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IdFavoris")
+                        .HasColumnType("integer");
+
+                    b.HasKey("idCrypto", "idUser");
+
+                    b.ToTable("Favoris");
+                });
+
             modelBuilder.Entity("Backend_Crypto.Models.HistoriquePrix", b =>
                 {
                     b.Property<int>("IdHistorique")
@@ -114,21 +130,18 @@ namespace Backend_Crypto.Migrations
                     b.Property<double>("AmountCrypto")
                         .HasColumnType("double precision");
 
+                    b.Property<int>("IdCrypto")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("IdTransaction")
                         .HasColumnType("integer");
 
                     b.Property<double>("PrixUnitaire")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("IdOrdre");
+
+                    b.HasIndex("IdCrypto");
 
                     b.HasIndex("IdTransaction")
                         .IsUnique();
@@ -166,6 +179,9 @@ namespace Backend_Crypto.Migrations
                     b.Property<int>("IdCrypto")
                         .HasColumnType("integer");
 
+                    b.Property<int>("IdStock")
+                        .HasColumnType("integer");
+
                     b.Property<double>("Stock")
                         .HasColumnType("double precision");
 
@@ -198,6 +214,9 @@ namespace Backend_Crypto.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
+                    b.Property<double>("fond")
+                        .HasColumnType("double precision");
+
                     b.HasKey("IdTransaction");
 
                     b.HasIndex("IdPortefeuille");
@@ -216,6 +235,17 @@ namespace Backend_Crypto.Migrations
                     b.Navigation("Transac");
                 });
 
+            modelBuilder.Entity("Backend_Crypto.Models.Favoris", b =>
+                {
+                    b.HasOne("Backend_Crypto.Models.Crypto", "Cryptos")
+                        .WithMany("FavsClient")
+                        .HasForeignKey("idCrypto")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cryptos");
+                });
+
             modelBuilder.Entity("Backend_Crypto.Models.HistoriquePrix", b =>
                 {
                     b.HasOne("Backend_Crypto.Models.Crypto", "CryptoChange")
@@ -229,10 +259,18 @@ namespace Backend_Crypto.Migrations
 
             modelBuilder.Entity("Backend_Crypto.Models.Ordre", b =>
                 {
+                    b.HasOne("Backend_Crypto.Models.Crypto", "CryptoOrdre")
+                        .WithMany("Orders")
+                        .HasForeignKey("IdCrypto")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Backend_Crypto.Models.Transaction", "Transac")
                         .WithOne("Ordre")
                         .HasForeignKey("Backend_Crypto.Models.Ordre", "IdTransaction")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("CryptoOrdre");
 
                     b.Navigation("Transac");
                 });
@@ -269,7 +307,11 @@ namespace Backend_Crypto.Migrations
 
             modelBuilder.Entity("Backend_Crypto.Models.Crypto", b =>
                 {
+                    b.Navigation("FavsClient");
+
                     b.Navigation("Historiques");
+
+                    b.Navigation("Orders");
 
                     b.Navigation("StockClient");
                 });

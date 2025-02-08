@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Backend_Crypto.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace Backend_Crypto.Models
+namespace Backend_Crypto.Dto
 {
-    public class Ordre
+    public class OrdreDto
     {
         public int IdOrdre { get; set; }
 
@@ -12,10 +13,5 @@ namespace Backend_Crypto.Models
 
         [Required(ErrorMessage = "Quantité incorrecte")]
         public double AmountCrypto { get; set; }
-        public int? IdTransaction { get; set; }
-        public int IdCrypto { get; set; }
-        public Crypto CryptoOrdre { get; set; } = new Crypto();
-        public Transaction? Transac { get; set; }
-
     }
 }

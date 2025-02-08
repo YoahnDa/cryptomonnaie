@@ -41,6 +41,25 @@ namespace Backend_Crypto.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Favoris",
+                columns: table => new
+                {
+                    idUser = table.Column<int>(type: "integer", nullable: false),
+                    idCrypto = table.Column<int>(type: "integer", nullable: false),
+                    IdFavoris = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Favoris", x => new { x.idCrypto, x.idUser });
+                    table.ForeignKey(
+                        name: "FK_Favoris_Cryptos_idCrypto",
+                        column: x => x.idCrypto,
+                        principalTable: "Cryptos",
+                        principalColumn: "IdCrypto",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Historiques",
                 columns: table => new
                 {
@@ -67,6 +86,7 @@ namespace Backend_Crypto.Migrations
                 {
                     IdPorteFeuille = table.Column<int>(type: "integer", nullable: false),
                     IdCrypto = table.Column<int>(type: "integer", nullable: false),
+                    IdStock = table.Column<int>(type: "integer", nullable: false),
                     Stock = table.Column<double>(type: "double precision", nullable: false)
                 },
                 constraints: table =>
@@ -95,7 +115,8 @@ namespace Backend_Crypto.Migrations
                     Type = table.Column<int>(type: "integer", nullable: false),
                     State = table.Column<int>(type: "integer", nullable: false),
                     DateTransaction = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    IdPortefeuille = table.Column<int>(type: "integer", nullable: false)
+                    IdPortefeuille = table.Column<int>(type: "integer", nullable: false),
+                    fond = table.Column<double>(type: "double precision", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -116,13 +137,18 @@ namespace Backend_Crypto.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     PrixUnitaire = table.Column<double>(type: "double precision", nullable: false),
                     AmountCrypto = table.Column<double>(type: "double precision", nullable: false),
-                    Type = table.Column<string>(type: "text", nullable: false),
-                    State = table.Column<string>(type: "text", nullable: false),
-                    IdTransaction = table.Column<int>(type: "integer", nullable: true)
+                    IdTransaction = table.Column<int>(type: "integer", nullable: true),
+                    IdCrypto = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Ordres", x => x.IdOrdre);
+                    table.ForeignKey(
+                        name: "FK_Ordres_Cryptos_IdCrypto",
+                        column: x => x.IdCrypto,
+                        principalTable: "Cryptos",
+                        principalColumn: "IdCrypto",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Ordres_Transac_IdTransaction",
                         column: x => x.IdTransaction,
@@ -171,6 +197,11 @@ namespace Backend_Crypto.Migrations
                 column: "idCrypto");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Ordres_IdCrypto",
+                table: "Ordres",
+                column: "IdCrypto");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Ordres_IdTransaction",
                 table: "Ordres",
                 column: "IdTransaction",
@@ -201,6 +232,9 @@ namespace Backend_Crypto.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Favoris");
+
             migrationBuilder.DropTable(
                 name: "Historiques");
 
