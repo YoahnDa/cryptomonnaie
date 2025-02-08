@@ -1,55 +1,158 @@
 <template>
-    <div class="real-time">
-      <Sidebar />
-      <div class="main-content">
-        <header class="real-time-header">
-          <h2>Cours en temps réel</h2>
-          <p>Suivez les prix des cryptomonnaies</p>
-        </header>
-        <div class="real-time-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Cryptomonnaie</th>
-                <th>Prix (USD)</th>
-                <th>24h Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="crypto in cryptos" :key="crypto.id">
-                <td>{{ crypto.name }}</td>
-                <td>${{ crypto.price }}</td>
-                <td :class="crypto.change >= 0 ? 'positive' : 'negative'">
-                  {{ crypto.change }}%
-                </td>
-              </tr>
-            </tbody>
-          </table>
+  <div class="real-time">
+    <Sidebar />
+    <div class="main-content">
+      <!-- Market Table -->
+      <div class="card fade-in" style="animation-delay: 0.5s">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>
+                    <button class="btn btn-link text-dark p-0" @click="sortBy('rank')">#</button>
+                  </th>
+                  <th>
+                    <button class="btn btn-link text-dark p-0" @click="sortBy('name')">Name</button>
+                  </th>
+                  <th>
+                    <button class="btn btn-link text-dark p-0" @click="sortBy('price')">Price</button>
+                  </th>
+                  <th>
+                    <button class="btn btn-link text-dark p-0" @click="sortBy('change')">24h Change</button>
+                  </th>
+                  <th>
+                    <button class="btn btn-link text-dark p-0" @click="sortBy('volume')">24h Volume</button>
+                  </th>
+                  <th>
+                    <button class="btn btn-link text-dark p-0" @click="sortBy('marketCap')">Market Cap</button>
+                  </th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="crypto in filteredCryptos" :key="crypto.id">
+                  <td>{{ crypto.rank }}</td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <img :src="crypto.icon" :alt="crypto.name" class="crypto-icon">
+                      <div>
+                        <div class="fw-medium">{{ crypto.name }}</div>
+                        <div class="text-muted small">{{ crypto.symbol }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>${{ crypto.price.toFixed(2) }}</td>
+                  <td :class="crypto.change >= 0 ? 'trend-up' : 'trend-down'">
+                    {{ crypto.change >= 0 ? '+' : '' }}{{ crypto.change.toFixed(2) }}%
+                  </td>
+                  <td>${{ formatNumber(crypto.volume) }}</td>
+                  <td>${{ formatNumber(crypto.marketCap) }}</td>
+                  <td>
+                    <button 
+                      class="btn btn-sm"
+                      :class="crypto.favorite ? 'btn-warning' : 'btn-outline-warning'"
+                      @click="toggleFavorite(crypto)"
+                    >
+                      <i class="bi" :class="crypto.favorite ? 'bi-star-fill' : 'bi-star'"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup lang="ts">
-  import { ref } from 'vue';
-  import Sidebar from '../components/Sidebar.vue';
-  
-  const cryptos = ref([
-    { id: 1, name: 'Bitcoin', price: 45000, change: 2.4 },
-    { id: 2, name: 'Ethereum', price: 3200, change: -1.2 },
-    { id: 3, name: 'Binance Coin', price: 420, change: 0.8 },
-  ]);
-  </script>
-  
-  <style scoped>
-  .real-time {
+  </div>
+</template>
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import Sidebar from '../components/Sidebar.vue';
+
+// Données des cryptomonnaies
+const cryptos = ref([
+  {
+    id: 1,
+    rank: 1,
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    icon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+    price: 45000,
+    change: 2.4,
+    volume: 30000000,
+    marketCap: 850000000000,
+    favorite: false,
+  },
+  {
+    id: 2,
+    rank: 2,
+    name: 'Ethereum',
+    symbol: 'ETH',
+    icon: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+    price: 3200,
+    change: -1.2,
+    volume: 15000000,
+    marketCap: 380000000000,
+    favorite: false,
+  },
+  {
+    id: 3,
+    rank: 3,
+    name: 'Binance Coin',
+    symbol: 'BNB',
+    icon: 'https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png',
+    price: 420,
+    change: 0.8,
+    volume: 5000000,
+    marketCap: 65000000000,
+    favorite: false,
+  },
+]);
+
+// État de tri
+const sortKey = ref('');
+const sortOrder = ref(1);
+
+// Tri des cryptomonnaies
+const filteredCryptos = computed(() => {
+  return [...cryptos.value].sort((a, b) => {
+    if (a[sortKey.value] < b[sortKey.value]) return -1 * sortOrder.value;
+    if (a[sortKey.value] > b[sortKey.value]) return 1 * sortOrder.value;
+    return 0;
+  });
+});
+
+// Fonction de tri
+const sortBy = (key) => {
+  if (sortKey.value === key) {
+    sortOrder.value *= -1; // Inverser l'ordre si la même clé est cliquée
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 1; // Réinitialiser l'ordre
+  }
+};
+
+// Ajouter/Retirer des favoris
+const toggleFavorite = (crypto) => {
+  crypto.favorite = !crypto.favorite;
+};
+
+// Formatage des grands nombres
+const formatNumber = (value) => {
+  return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value);
+};
+</script>
+<style scoped>
+/* Styles principaux */
+.real-time {
   display: flex;
   min-height: 100vh;
   background-color: #f9fafb; /* Fond clair */
 }
 
 .main-content {
-  margin-left: 0; /* Plein écran : suppression de l'espace pour la sidebar */
+  margin-left: 280px; /* Espace pour la sidebar */
   flex: 1;
   padding: 2rem;
   display: flex;
@@ -58,64 +161,76 @@
   justify-content: flex-start; /* Aligner le contenu en haut */
 }
 
-.real-time-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.real-time-header h2 {
-  font-size: 2rem;
-  color: #2563eb; /* Bleu pour le titre */
-  animation: fadeIn 1s ease-in-out; /* Animation d'apparition */
-}
-
-.real-time-header p {
-  font-size: 1rem;
-  color: #6b7280; /* Gris doux */
-}
-
-.real-time-table {
-  max-width: 1200px; /* Largeur maximale pour les grands écrans */
+.card {
+  max-width: 1200px;
   width: 100%;
-  margin: 0 auto; /* Centrer la table */
   background: white;
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Ombre légère */
   animation: slideUp 0.8s ease-in-out; /* Animation de montée */
-  overflow-x: auto; /* Permettre le défilement horizontal si nécessaire */
 }
 
-table {
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table {
   width: 100%;
   border-collapse: collapse;
 }
 
-th,
-td {
+.table th,
+.table td {
   padding: 1rem;
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
 
-/* Hover effect for rows */
-tbody tr:hover {
+.table th {
+  cursor: pointer;
+  user-select: none;
+  font-weight: bold;
+  color: #374151; /* Bleu-gris foncé */
+}
+
+.table tbody tr:hover {
   background-color: #f3f4f6; /* Fond clair au survol */
   transform: scale(1.01); /* Légère augmentation de taille */
   transition: background-color 0.3s ease, transform 0.3s ease; /* Transition fluide */
 }
 
-.positive {
+.crypto-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.trend-up {
   color: #22c55e; /* Vert pour les variations positives */
 }
 
-.negative {
+.trend-down {
   color: #dc2626; /* Rouge pour les variations négatives */
 }
 
-/* ==============================
-   ANIMATIONS
-   ============================== */
+/* Boutons Favoris */
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btn-outline-warning {
+  color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+  background-color: #ffc107;
+  color: #fff;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -135,4 +250,4 @@ tbody tr:hover {
     opacity: 1;
   }
 }
-  </style>
+</style>

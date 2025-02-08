@@ -10,24 +10,27 @@
                 <p class="text-muted">Welcome back! Please login to your account.</p>
               </div>
               <form @submit.prevent="handleLogin" class="login-form">
+                <!-- Champ Username -->
                 <div class="mb-4">
-                  <label for="email" class="form-label">Email</label>
+                  <label for="username" class="form-label">Nom d'utilisateur</label>
                   <div class="input-group">
                     <span class="input-group-text">
-                      <i class="bi bi-envelope"></i>
+                      <i class="bi bi-person"></i>
                     </span>
                     <input 
-                      type="email" 
+                      type="text" 
                       class="form-control" 
-                      id="email" 
-                      v-model="email"
-                      placeholder="Enter your email"
+                      id="username" 
+                      v-model="username"
+                      placeholder="Entrez votre nom d'utilisateur"
                       required
                     >
                   </div>
                 </div>
+
+                <!-- Champ Password -->
                 <div class="mb-4">
-                  <label for="password" class="form-label">Password</label>
+                  <label for="password" class="form-label">Mot de passe</label>
                   <div class="input-group">
                     <span class="input-group-text">
                       <i class="bi bi-lock"></i>
@@ -37,98 +40,150 @@
                       class="form-control" 
                       id="password" 
                       v-model="password"
-                      placeholder="Enter your password"
+                      placeholder="Entrez votre mot de passe"
                       required
                     >
                   </div>
                 </div>
+
+                <!-- Bouton Login -->
                 <button type="submit" class="btn btn-primary w-100 login-btn">
                   <span>Login</span>
                   <i class="bi bi-arrow-right"></i>
                 </button>
               </form>
-              
+
+              <!-- Lien vers la page d'inscription -->
+              <div class="text-center mt-4">
+                <p class="text-muted">
+                  Vous n'avez pas de compte ? 
+                  <router-link to="/signup" class="link-primary text-decoration-none">Créer un nouveau compte</router-link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal pour la vérification PIN -->
+    <div v-if="showPinModal" class="pin-modal-overlay">
+      <div class="pin-modal">
+        <h3>Vérification PIN</h3>
+        <p>Un PIN temporaire a été envoyé à votre email. Veuillez l'entrer ci-dessous :</p>
+        <form @submit.prevent="verifyPin">
+          <div class="mb-3">
+            <input 
+              type="text" 
+              class="form-control" 
+              v-model="enteredPin" 
+              placeholder="Entrez le PIN" 
+              required
+            />
+          </div>
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" @click="resendPin">Renvoyer le PIN</button>
+            <button type="submit" class="btn btn-primary">Vérifier</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
-const email = ref('')
-const password = ref('')
+const router = useRouter();
+const email = ref('');
+const password = ref('');
+const showPinModal = ref(false);
+const enteredPin = ref('');
+const tempPin = ref('');
 
+// Simuler la connexion
 const handleLogin = () => {
-  router.push('/dashboard')
-}
+  console.log('Connexion avec :', { email: email.value, password: password.value });
+
+  // Générer un PIN temporaire
+  tempPin.value = Math.floor(1234).toString();
+  console.log(`PIN envoyé : ${tempPin.value}`);
+
+  // Afficher le modal de vérification PIN
+  showPinModal.value = true;
+};
+
+// Vérification du PIN
+const verifyPin = () => {
+  if (enteredPin.value === tempPin.value) {
+    alert('Authentification réussie ! Redirection...');
+    showPinModal.value = false; // Fermer le modal
+    router.push('/dashboard');
+  } else {
+    alert('PIN incorrect. Veuillez réessayer.');
+  }
+};
 </script>
 
+
+
 <style scoped>
-.login-page {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  min-height: 100vh;
+/* Modal Overlay */
+.pin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.login-card {
-  background: rgba(255, 255, 255, 0.95);
+/* Modal Content */
+.pin-modal {
+  background: #fff;
+  padding: 2rem;
   border-radius: 1rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
 }
 
-.brand-name {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  -webkit-background-clip: text;
-  color: transparent;
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -1px;
+.pin-modal h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.pin-modal p {
+  margin-bottom: 1.5rem;
+  color: #666;
+}
+
+.pin-modal .form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   margin-bottom: 1rem;
 }
 
-.input-group-text {
-  background: transparent;
-  border-right: none;
+.pin-modal .btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
 }
 
-.input-group .form-control {
-  border-left: none;
+.pin-modal .btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
 }
 
-.input-group:focus-within {
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.login-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.login-btn i {
-  transition: transform 0.3s ease;
-}
-
-.login-btn:hover i {
-  transform: translateX(4px);
-}
-
-.fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
+.pin-modal .btn-primary {
+  background-color: #2563eb;
+  color: #fff;
 }
 </style>

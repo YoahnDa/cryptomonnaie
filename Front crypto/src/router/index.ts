@@ -15,6 +15,8 @@ import AdminLogin from '../views/admin/AdminLogin.vue';
 import Login from '../views/Login.vue';
 import Profile from '../views/Profile.vue';
 import Sidebar from '../views/Sidebar.vue';
+import Signup from '../views/Signup.vue';
+import UserHistory from '../views/UserHistory.vue';
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -34,6 +36,8 @@ const routes = [
   { path: '/admin/adminUserHistory', component: AdminUserHistory },
   { path: '/admin/adminLogin', component: AdminLogin },
   { path: '/sidebar', component: Sidebar },
+  { path: '/signup', component: Signup },
+  { path: '/userHistory', component: UserHistory },
 
 ];
 

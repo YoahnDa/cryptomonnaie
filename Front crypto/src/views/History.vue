@@ -6,7 +6,6 @@
         <h2>Historique des Transactions</h2>
         <p>Liste des achats et ventes passés</p>
       </header>
-
       <!-- Filtres multicritères -->
       <div class="filters">
         <div class="form-group">
@@ -26,7 +25,6 @@
         </div>
         <button class="btn-validate" @click="applyFilters">Valider</button>
       </div>
-
       <!-- Liste des transactions -->
       <div class="transaction-list">
         <table>
@@ -37,6 +35,7 @@
               <th>Cryptomonnaie</th>
               <th>Type</th>
               <th>Montant</th>
+              <th>Actions</th> <!-- Nouvelle colonne -->
             </tr>
           </thead>
           <tbody>
@@ -53,6 +52,12 @@
                 {{ transaction.type }}
               </td>
               <td>${{ transaction.amount.toLocaleString() }}</td>
+              <td>
+                <!-- Bouton "Voir Détails" -->
+                <button class="btn-view-details" @click="navigateToUserHistory(transaction.user)">
+                  Voir Détails
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -60,38 +65,66 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import Sidebar from '../components/Sidebar.vue';
 
+
+const router = useRouter();
+
+// Interface pour les transactions
+interface Transaction {
+  id: number;
+  date: string;
+  user: string;
+  userImage: string;
+  crypto: string;
+  type: 'Achat' | 'Vente';
+  amount: number;
+}
+
 // Données de test
-const transactions = ref([
-  { id: 1, date: '2024-03-10', user: 'Esther Howard', userImage: '../assets/user.jpeg', crypto: 'Bitcoin', type: 'Achat', amount: 500 },
+const transactions = ref<Transaction[]>([
+  { id: 1, date: '2024-03-10', user: 'Esther Howard', userImage: 'https://via.placeholder.com/40', crypto: 'Bitcoin', type: 'Achat', amount: 500 },
   { id: 2, date: '2024-03-09', user: 'John Doe', userImage: 'https://via.placeholder.com/40', crypto: 'Ethereum', type: 'Vente', amount: 300 },
   { id: 3, date: '2024-03-08', user: 'Jane Smith', userImage: 'https://via.placeholder.com/40', crypto: 'Binance Coin', type: 'Achat', amount: 1000 },
 ]);
 
-const cryptos = ref(['Bitcoin', 'Ethereum', 'Binance Coin']);
-
 // Filtres
-const filters = ref({
+interface Filters {
+  date: string;
+  user: string;
+  crypto: string;
+}
+
+const filters = ref<Filters>({
   date: '',
   user: '',
   crypto: '',
 });
 
 // Transactions filtrées
-const filteredTransactions = computed(() => {
-  return transactions.value.filter((transaction) => {
+const filteredTransactions = ref<Transaction[]>([...transactions.value]);
+
+// Appliquer les filtres
+const applyFilters = () => {
+  filteredTransactions.value = transactions.value.filter((transaction) => {
     return (
       (!filters.value.date || transaction.date === filters.value.date) &&
       (!filters.value.user || transaction.user.toLowerCase().includes(filters.value.user.toLowerCase())) &&
       (!filters.value.crypto || transaction.crypto === filters.value.crypto)
     );
   });
-});
+};
+
+// Navigation vers la page UserHistory
+const navigateToUserHistory = (username: string) => {
+  router.push({ path: '/userHistory', query: { username } });
+};
 </script>
+
+
 
 <style scoped>
 .history {
@@ -231,6 +264,22 @@ td {
 
 .negative {
   color: #dc2626; /* Rouge pour les ventes */
+}
+.btn-view-details {
+  padding: 0.5rem 1rem;
+  background-color: #44e835; /* Bleu */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.btn-view-details:hover {
+  background-color: #36d03e; /* Bleu plus foncé */
+  transform: scale(1.05); /* Légère augmentation de taille */
 }
 
 /* ==============================
