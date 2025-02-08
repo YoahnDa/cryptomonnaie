@@ -86,5 +86,22 @@ namespace Backend_Crypto.Repository
             _context.Remove(crypto);
             return Save();
         }
+
+        public double GetFirstPrixCrypto(int idCrypto)
+        {
+            Crypto crypto = _context.Cryptos.Include(c => c.Historiques.OrderBy(h => h.DateChange))
+                .FirstOrDefault(c => c.IdCrypto == idCrypto);
+            double prix = crypto == null ? 0 : crypto.Historiques.First().PrixCrypto;
+            return prix;
+        }
+
+        public async Task<ICollection<Crypto>> GetAsynCrypto()
+        {
+            var cryptos = await _context.Cryptos
+                          .Include(c => c.Historiques.OrderByDescending(h => h.DateChange))
+                          .OrderByDescending(p => p.IdCrypto)
+                          .ToListAsync();
+            return cryptos ?? new List<Crypto>();
+        }
     }
 }

@@ -69,5 +69,19 @@ namespace Backend_Crypto.Repository
             _context.Update(transac);
             return Save();
         }
+
+        public ICollection<Transaction> GetTransactionByTypes(List<TypeTransaction> types)
+        {
+            return _context.Transac
+                            .Where(t => types.Contains(t.Type)) // Filtrer les types demandés
+                            .ToList();
+        }
+
+        public ICollection<Transaction> GetTransactionByTypesPortefeuille(List<TypeTransaction> types, int idPortefeuille)
+        {
+            return _context.Transac
+                            .Where(t => t.IdPortefeuille == idPortefeuille && types.Contains(t.Type)) // Filtrer les types demandés
+                            .ToList();
+        }
     }
 }

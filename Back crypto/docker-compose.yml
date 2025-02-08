@@ -1,6 +1,4 @@
-﻿version: '3.7'
-
-services:
+﻿services:
   backend_crypto-db:
     image: postgres:latest
     container_name: backend_crypto-db
@@ -8,8 +6,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: crypto_tp
-    ports:
-      - "5433:5432"
     networks:
       - backend_network
     volumes:
@@ -23,6 +19,7 @@ services:
     environment:
       - ConnectionStrings__PostgreSqlConnection=Host=backend_crypto-db;Port=5432;Username=postgres;Password=root;Database=crypto_tp
       - ASPNETCORE_ENVIRONMENT=Development
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/App_Data/firebase/credentials.json
     depends_on:
       - backend_crypto-db
     networks:

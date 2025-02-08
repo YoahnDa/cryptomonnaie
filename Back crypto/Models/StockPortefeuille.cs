@@ -4,6 +4,7 @@ namespace Backend_Crypto.Models
 {
     public class StockPortefeuille
     {
+        public int IdStock { get; set; }
         public Portefeuille PorteFeuilleOwn { get; set; } = new Portefeuille();
         public int IdPorteFeuille { get; set; }
         public int IdCrypto { get; set; }

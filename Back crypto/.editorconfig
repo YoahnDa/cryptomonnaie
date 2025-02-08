@@ -1,0 +1,7 @@
+﻿[*.cs]
+
+# CS4014: Dans la mesure où cet appel n'est pas attendu, l'exécution de la méthode actuelle continue avant la fin de l'appel
+dotnet_diagnostic.CS4014.severity = none
+
+# CS8600: Conversion de littéral ayant une valeur null ou d'une éventuelle valeur null en type non-nullable.
+dotnet_diagnostic.CS8600.severity = none

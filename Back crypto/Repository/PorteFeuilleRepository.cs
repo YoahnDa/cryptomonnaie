@@ -46,11 +46,9 @@ namespace Backend_Crypto.Repository
             return Save();
         }
 
-        public PortefeuilleDto? GetPortefeuille(int idUser)
+        public Portefeuille? GetPortefeuille(int idUser)
         {
-            return _context.Portefeuilles
-                .ProjectTo<PortefeuilleDto>(_mapper.ConfigurationProvider)
-                .FirstOrDefault(c => c.IdUser == idUser);
+            return _context.Portefeuilles.FirstOrDefault(c => c.IdUser == idUser);
         }
 
         public bool HaveCrypto(int idUser,int idCrypto)
@@ -59,9 +57,21 @@ namespace Backend_Crypto.Repository
             return portefeuille!=null && portefeuille.Stock.Any(c => c.IdCrypto == idCrypto);
         }
 
+        public bool HaveEnoughCrypto(int idUser, int idCrypto, double need)
+        {
+            var portefeuille = GetPortefeuille(idUser);
+
+            // Trouver la crypto dans le portefeuille
+            StockPortefeuille stock = portefeuille.Stock.FirstOrDefault(c => c.IdCrypto == idCrypto);
+
+            // Vérifier si la crypto existe et si le solde est suffisant
+            return stock != null && stock.Stock >= need;
+        }
+
+
         public bool HaveEnoughFond(int idUser , double need)
         {
-            PortefeuilleDto portefeuille = GetPortefeuille(idUser);
+            Portefeuille portefeuille = GetPortefeuille(idUser);
             return portefeuille != null && portefeuille.Fond >= need;
         }
 
@@ -80,6 +90,12 @@ namespace Backend_Crypto.Repository
         {
             var saved = _context.SaveChanges();
             return saved > 0 ? true : false;
+        }
+
+        public bool UpdatePortefeuille(Portefeuille portefeuille)
+        {
+            _context.Update(portefeuille);
+            return Save();
         }
     }
 }
