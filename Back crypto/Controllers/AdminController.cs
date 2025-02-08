@@ -1,8 +1,11 @@
 ﻿using Backend_Crypto.Dto;
 using Backend_Crypto.Interfaces;
 using Backend_Crypto.Models;
+using Backend_Crypto.Repository;
 using Backend_Crypto.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Newtonsoft.Json.Linq;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,6 +17,8 @@ namespace Backend_Crypto.Controllers
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly IPorteFeuilleRepository _porteFeuilleRepository;
+        private readonly ExternalApiService _externalApiService;
+        private readonly TokenValidator _tokenValidator;
         private readonly UserAnalytique _analytique;
         public AdminController (ITransactionRepository transactionRepository, UserAnalytique userAnalytique, IPorteFeuilleRepository portefeuille)
         {
@@ -22,52 +27,72 @@ namespace Backend_Crypto.Controllers
             _analytique = userAnalytique;
         }
 
-        [HttpGet("transaction/exchangefond")]
+        [HttpGet("transaction")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<TransactionDtoAdmin>))]
         [ProducesResponseType(500)]
-        public IActionResult GetExchangeInfo()
+        public async Task<IActionResult> GetOperationInfo()
         {
-            var listType = new List<TypeTransaction> { TypeTransaction.Retrait, TypeTransaction.Depot };
-            return Ok(_analytique.getTransac(listType));
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                JArray roles = (JArray)user["roles"];
+                if(!(roles != null && roles.Contains("ROLE_ADMIN")))
+                {
+                    return Unauthorized("Vous êtes pas admin.");
+                }
+                var listType = new List<TypeTransaction> { TypeTransaction.Vente, TypeTransaction.Achat, TypeTransaction.Depot, TypeTransaction.Retrait };
+                var listRetour = _analytique.getTransac(listType, token);
+                return Ok(listRetour);
+            }
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
         }
 
-        [HttpGet("transaction/exchangefond/{id}")]
+        [HttpGet("transaction/{id}")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<TransactionDtoAdmin>))]
         [ProducesResponseType(500)]
         [ProducesResponseType(404)]
-        public IActionResult GetExchangeUser(int id)
+        public async Task<IActionResult> GetOperationUser(int id)
         {
-            var listType = new List<TypeTransaction> { TypeTransaction.Retrait, TypeTransaction.Depot };
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+
+            var listType = new List<TypeTransaction> { TypeTransaction.Vente, TypeTransaction.Achat, TypeTransaction.Depot,TypeTransaction.Achat};
             if (_porteFeuilleRepository.PortefeuilleExiste(id))
             {
                 return NotFound("Portefeuille introuvable.");
             }
             var portefeuille = _porteFeuilleRepository.GetPortefeuille(id);
-            return Ok(_analytique.getTransacUser(listType,portefeuille.IdPortefeuille));
-        }
 
-        [HttpGet("transaction/operation")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<TransactionDtoAdmin>))]
-        [ProducesResponseType(500)]
-        public IActionResult GetOperationInfo()
-        {
-            var listType = new List<TypeTransaction> { TypeTransaction.Vente, TypeTransaction.Achat };
-            return Ok(_analytique.getTransac(listType));
-        }
-
-        [HttpGet("transaction/operation/{id}")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<TransactionDtoAdmin>))]
-        [ProducesResponseType(500)]
-        [ProducesResponseType(404)]
-        public IActionResult GetOperationUser(int id)
-        {
-            var listType = new List<TypeTransaction> { TypeTransaction.Vente, TypeTransaction.Achat };
-            if (_porteFeuilleRepository.PortefeuilleExiste(id))
+            try
             {
-                return NotFound("Portefeuille introuvable.");
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                JArray roles = (JArray)user["roles"];
+                if (!(roles != null && roles.Contains("ROLE_ADMIN")))
+                {
+                    return Unauthorized("Vous êtes pas admin.");
+                }
+                
+                var listRetour = _analytique.getTransacUser(listType, portefeuille.IdPortefeuille, token);
+                return Ok(listRetour);
             }
-            var portefeuille = _porteFeuilleRepository.GetPortefeuille(id);
-            return Ok(_analytique.getTransacUser(listType, portefeuille.IdPortefeuille));
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
         }
 
         [HttpGet("transaction/validation/exchangefond/{id}")]
@@ -75,8 +100,29 @@ namespace Backend_Crypto.Controllers
         [ProducesResponseType(500)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
-        public IActionResult ValidateTransac(int id)
+        public async Task<IActionResult> ValidateTransac(int id)
         {
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                JArray roles = (JArray)user["roles"];
+                if (!(roles != null && roles.Contains("ROLE_ADMIN")))
+                {
+                    return Unauthorized("Vous êtes pas admin.");
+                }
+            }
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
+
             var transaction = _transactionRepository.GetTransaction(id);
             if (transaction == null)
             {
@@ -109,8 +155,29 @@ namespace Backend_Crypto.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(500)]
         [ProducesResponseType(404)]
-        public IActionResult AnnulationTransac(int id)
+        public async  Task<IActionResult> AnnulationTransac(int id)
         {
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                JArray roles = (JArray)user["roles"];
+                if (!(roles != null && roles.Contains("ROLE_ADMIN")))
+                {
+                    return Unauthorized("Vous êtes pas admin.");
+                }
+            }
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
+
             var transaction = _transactionRepository.GetTransaction(id);
             if (transaction == null)
             {
@@ -124,32 +191,39 @@ namespace Backend_Crypto.Controllers
             return Ok("Transaction annuler.");
         }
 
-        [HttpGet("transaction/recherche/exchangefond")]
+        [HttpGet("transaction/recherche")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<TransactionDtoAdmin>))]
         [ProducesResponseType(500)]
-        public IActionResult Search([FromQuery] List<int>? idUtilisateurs,[FromQuery] List<int>? idCryptos)
+        public async Task<IActionResult> Search([FromQuery] List<int>? idUtilisateurs,[FromQuery] List<int>? idCryptos)
         {
-            var filter = new TransactionFilterDto
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
             {
-                IdUtilisateurs = idUtilisateurs ?? new List<int>(),
-                IdCryptos = idCryptos ?? new List<int>(),
-                Types = new List<TypeTransaction>() { TypeTransaction.Retrait, TypeTransaction.Depot },
-            };
-            return Ok(_analytique.GetTransactionsByFilter(filter));
-        }
+                return Unauthorized();
+            }
 
-        [HttpGet("transaction/recherche/operation")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<TransactionDtoAdmin>))]
-        [ProducesResponseType(500)]
-        public IActionResult SearchOperation([FromQuery] List<int>? idUtilisateurs, [FromQuery] List<int>? idCryptos)
-        {
-            var filter = new TransactionFilterDto
+            try
             {
-                IdUtilisateurs = idUtilisateurs ?? new List<int>(),
-                IdCryptos = idCryptos ?? new List<int>(),
-                Types = new List<TypeTransaction>() { TypeTransaction.Vente, TypeTransaction.Achat },
-            };
-            return Ok(_analytique.GetTransactionsByFilter(filter));
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                JArray roles = (JArray)user["roles"];
+                if (!(roles != null && roles.Contains("ROLE_ADMIN")))
+                {
+                    return Unauthorized("Vous êtes pas admin.");
+                }
+
+                var filter = new TransactionFilterDto
+                {
+                    IdUtilisateurs = idUtilisateurs ?? new List<int>(),
+                    IdCryptos = idCryptos ?? new List<int>(),
+                    Types = new List<TypeTransaction>() { TypeTransaction.Retrait, TypeTransaction.Depot, TypeTransaction.Vente, TypeTransaction.Achat },
+                };
+                return Ok(_analytique.GetTransactionsByFilter(filter,token));
+            }
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
         }
     }
 }
