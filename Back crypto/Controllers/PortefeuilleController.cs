@@ -47,7 +47,7 @@ namespace Backend_Crypto.Controllers
             {
                 JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
                 Portefeuille portefeuille = _portefeuilleRepository.GetPortefeuille(user["id"].ToObject<int>());
-                AnalysePortefeuilleDto userRet = _analyser.getInfoPortefeuille(user["id"].ToObject<int>());
+                AnalysePortefeuilleDto userRet = await _analyser.getInfoPortefeuille(user["id"].ToObject<int>(),token);
                 return Ok(userRet);
             }catch(ApiException ex)
             {
@@ -69,11 +69,14 @@ namespace Backend_Crypto.Controllers
             try
             {
                 JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                JArray roles = (JArray)user["roles"];  // Accéder à la propriété "roles" (qui est un tableau)
+
                 UserInfoDto userRet = new UserInfoDto()
                 {
                     id = user["id"].ToObject<int>(),
                     username = user["username"].ToString(),
-                    email = user["idEmail"]["value"].ToString(),
+                    email = user["email"].ToString(),
+                    isAdmin = roles != null && roles.Contains("ROLE_ADMIN")
                 };
                 return Ok(userRet);
             }
@@ -181,6 +184,12 @@ namespace Backend_Crypto.Controllers
                 {
                     JObject tokenRetour = new JObject();
                     tokenRetour["token"] = retour["token"];
+
+                    JObject user = await _externalApiService.GetDataFromApiAsync("user", retour["token"].ToString());
+                    if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
+                    {
+                        _portefeuilleRepository.CreatePortefeuille(user["id"].ToObject<int>());
+                    }
                     return StatusCode(200, tokenRetour);
                 }
                 ModelState.AddModelError("error", "Erreur d'authentification.");
@@ -193,41 +202,6 @@ namespace Backend_Crypto.Controllers
             }
         }
 
-
-        [HttpPost]
-        [ProducesResponseType(401)]
-        [ProducesResponseType(201)]
-        public async Task<IActionResult> CreationCompte()
-        {
-            string token = _tokenValidator.GetTokenFromHeader();
-            if (token == null)
-            {
-                return Unauthorized();
-            }
-            try
-            {
-                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
-                if (_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
-                {
-                    ModelState.AddModelError("error", "L'utilisateur a déjà un compte");
-                    return StatusCode(406, ModelState);
-                }
-
-                if (!_portefeuilleRepository.CreatePortefeuille(user["id"].ToObject<int>()))
-                {
-                    ModelState.AddModelError("error", "Erreur lors du sauvegarde");
-                    return StatusCode(500, ModelState);
-                }
-
-                return Created();
-                        
-            }
-            catch (ApiException ex)
-            {
-                ModelState.AddModelError("error", ex.Message);
-                return StatusCode(ex.StatusCode, ModelState);
-            }
-        }
 
         [HttpPost("retrait")]
         [ProducesResponseType(200)]

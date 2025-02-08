@@ -50,6 +50,7 @@ class UserController extends AbstractController
         return new JsonResponse($userJson,Response::HTTP_OK,[],true);
     }
 
+
     /**
      * Modification des infos utilisateurs.
      *

@@ -14,6 +14,7 @@ namespace Backend_Crypto.Dto
         public String State { get; set; } 
         public DateTime DateTransaction { get; set; }
         public int idUser { get; set; }
+        public String nom { get; set; }
         public double fond { get; set; }
     }
 }

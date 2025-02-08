@@ -4,6 +4,8 @@ using Backend_Crypto.Interfaces;
 using Backend_Crypto.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json.Linq;
 
 namespace Backend_Crypto.Services
 {
@@ -11,6 +13,7 @@ namespace Backend_Crypto.Services
     {
         private readonly IPorteFeuilleRepository _porteFeuilleRepository;
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ExternalApiService _externalApiService;
         private readonly IFavorisRepository _favorisRepository;
         private readonly ICryptoRepository _cryptoRepository;
         private readonly DataContext _context;
@@ -24,12 +27,13 @@ namespace Backend_Crypto.Services
             _context = context;
         }
 
-        public List<TransactionDtoAdmin> getTransac(List<TypeTransaction> type)
+        public async Task<List<TransactionDtoAdmin>> getTransac(List<TypeTransaction> type,string token)
         {
             var transactions = new List<TransactionDtoAdmin>();
             var listTransac = _transactionRepository.GetTransactionByTypes(type);
             foreach (var transaction in listTransac)
             {
+                JObject user = await _externalApiService.GetDataFromApiAsync("admin/userinfo/" + transaction.PortefeuilleOwner.IdUser, token);
                 transactions.Add(new TransactionDtoAdmin()
                 {
                     IdTransaction = transaction.IdTransaction,
@@ -37,18 +41,20 @@ namespace Backend_Crypto.Services
                     State = Enum.GetName(typeof(Status), transaction.State),
                     DateTransaction = transaction.DateTransaction,
                     idUser = transaction.PortefeuilleOwner.IdUser,
-                    fond = transaction.fond
+                    fond = transaction.fond,
+                    nom = user["username"].ToString()
                 });
             }
             return transactions;
         }
 
-        public List<TransactionDtoAdmin> getTransacUser(List<TypeTransaction> type,int idPortefeuille)
+        public async Task<List<TransactionDtoAdmin>> getTransacUser(List<TypeTransaction> type,int idPortefeuille,string token,bool isAdmin = false)
         {
             var transactions = new List<TransactionDtoAdmin>();
             var listTransac = _transactionRepository.GetTransactionByTypesPortefeuille(type,idPortefeuille);
             foreach (var transaction in listTransac)
             {
+                JObject user = isAdmin ? await _externalApiService.GetDataFromApiAsync("admin/userinfo/"+transaction.PortefeuilleOwner.IdUser,token) : await _externalApiService.GetDataFromApiAsync("admin/user",token);
                 transactions.Add(new TransactionDtoAdmin()
                 {
                     IdTransaction = transaction.IdTransaction,
@@ -56,7 +62,8 @@ namespace Backend_Crypto.Services
                     State = Enum.GetName(typeof(Status), transaction.State),
                     DateTransaction = transaction.DateTransaction,
                     idUser = transaction.PortefeuilleOwner.IdUser,
-                    fond = transaction.fond
+                    fond = transaction.fond,
+                    nom = user["username"].ToString()
                 });
             }
             return transactions;
@@ -74,7 +81,7 @@ namespace Backend_Crypto.Services
             }
         }
 
-        public List<TransactionDtoAdmin> GetTransactionsByFilter(TransactionFilterDto filter)
+        public async Task<List<TransactionDtoAdmin>> GetTransactionsByFilter(TransactionFilterDto filter,string token)
         {
             var query = _context.Transac.AsQueryable();
 
@@ -98,6 +105,7 @@ namespace Backend_Crypto.Services
 
             foreach (var transaction in listTransac)
             {
+                JObject user = await _externalApiService.GetDataFromApiAsync("admin/userinfo/" + transaction.PortefeuilleOwner.IdUser, token);
                 transactions.Add(new TransactionDtoAdmin()
                 {
                     IdTransaction = transaction.IdTransaction,
@@ -105,22 +113,23 @@ namespace Backend_Crypto.Services
                     State = Enum.GetName(typeof(Status), transaction.State),
                     DateTransaction = transaction.DateTransaction,
                     idUser = transaction.PortefeuilleOwner.IdUser,
-                    fond = transaction.fond
+                    fond = transaction.fond,
+                    nom = user["username"].ToString()
                 });
             }
 
             return transactions;
         }
 
-        public AnalysePortefeuilleDto getInfoPortefeuille(int idUser)
+        public async Task<AnalysePortefeuilleDto> getInfoPortefeuille(int idUser,String token )
         {
             var portefeuille = _porteFeuilleRepository.GetPortefeuille(idUser);
             return new AnalysePortefeuilleDto()
             {
                 IdPortefeuille = portefeuille.IdPortefeuille,
                 Fond = portefeuille.Fond,
-                listeEchange = getTransacUser(new List<TypeTransaction>() { TypeTransaction.Retrait, TypeTransaction.Depot }, portefeuille.IdPortefeuille),
-                listeOperation = getTransacUser(new List<TypeTransaction>() { TypeTransaction.Vente, TypeTransaction.Achat }, portefeuille.IdPortefeuille)
+                listeEchange = await getTransacUser(new List<TypeTransaction>() { TypeTransaction.Retrait, TypeTransaction.Depot }, portefeuille.IdPortefeuille,token,false),
+                listeOperation = await getTransacUser(new List<TypeTransaction>() { TypeTransaction.Vente, TypeTransaction.Achat }, portefeuille.IdPortefeuille,token ,false)
             };
         }
     }
