@@ -6,6 +6,7 @@
         <h2>Analyse Crypto</h2>
         <p>Analysez les performances des cryptomonnaies</p>
       </header>
+
       <!-- Filtres -->
       <div class="filters">
         <div class="form-group">
@@ -39,6 +40,7 @@
         </div>
         <button @click="applyFilters">Valider</button>
       </div>
+
       <!-- Résultats de l'analyse sous forme de tableau -->
       <div class="analysis-results">
         <h3>Résultats</h3>
@@ -66,20 +68,23 @@
         </table>
         <p v-else>Aucune donnée disponible pour les filtres sélectionnés.</p>
       </div>
-      <!-- Graphique en barres -->
+
+      <!-- Graphique en courbe -->
       <div class="chart-container">
-        <BarChart :data="chartData" :options="chartOptions" />
+        <LineChart :data="chartData" :options="chartOptions" />
       </div>
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Bar as BarChart } from 'vue-chartjs';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ChartOptions } from 'chart.js';
+import { Line as LineChart } from 'vue-chartjs';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import Sidebar from '../components/Sidebar.vue';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+// Enregistrer les composants nécessaires pour le graphique en courbe
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const cryptos = ref(['Bitcoin', 'Ethereum', 'Binance Coin']);
 const selectedAnalysis = ref<'quartile' | 'max' | 'min' | 'average' | 'stdDev'>('quartile');
@@ -106,7 +111,6 @@ const toggleAllCryptos = () => {
 
 // Appliquer les filtres
 const applyFilters = () => {
-  // Réinitialiser les données filtrées
   filteredData.value = cryptoData.value.filter((item) => {
     const dateMatch =
       (!minDateTime.value || new Date(item.date) >= new Date(minDateTime.value)) &&
@@ -119,22 +123,25 @@ const applyFilters = () => {
 // Données filtrées
 const filteredData = ref(cryptoData.value);
 
-// Données pour le graphique
+// Données pour le graphique en courbe
 const chartData = computed(() => {
   return {
-    labels: filteredData.value.map((item) => item.crypto),
+    labels: filteredData.value.map((item) => item.crypto), // Cryptomonnaies en abscisse
     datasets: [
       {
         label: selectedAnalysis.value,
-        data: filteredData.value.map((item) => item[selectedAnalysis.value]),
-        backgroundColor: ['#2563eb', '#059669', '#7c3aed'],
+        data: filteredData.value.map((item) => item[selectedAnalysis.value]), // Valeurs en ordonnée
+        borderColor: '#2563eb', // Couleur de la courbe
+        backgroundColor: 'rgba(37, 99, 235, 0.1)', // Fond sous la courbe
+        fill: true, // Remplir l'espace sous la courbe
+        tension: 0.4, // Lissage de la courbe
       },
     ],
   };
 });
 
-// Options du graphique
-const chartOptions: ChartOptions<'bar'> = {
+// Options du graphique en courbe
+const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -144,11 +151,12 @@ const chartOptions: ChartOptions<'bar'> = {
   },
   scales: {
     y: {
-      beginAtZero: true,
+      beginAtZero: false, // Ne pas commencer à zéro pour une meilleure visualisation
     },
   },
 };
 </script>
+
 
 <style scoped>
 .analysis {
