@@ -39,7 +39,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ExternalApiService>();
 builder.Services.AddHttpClient<ExternalApiService>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:8000/api/");// Adresse de base de l'API externe
+    client.BaseAddress = new Uri("http://authentication-api:8000/api/");// Adresse de base de l'API externe
     client.DefaultRequestHeaders.Add("Accept", "application/json"); // Headers par défaut
 });
 builder.Services.AddLogging(); // Ajout du logger si nécessaire

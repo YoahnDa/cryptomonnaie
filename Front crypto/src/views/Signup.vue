@@ -89,26 +89,50 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import apiClient from '../plugins/axios'; // Importez Axios
 
 const username = ref('');
 const email = ref('');
 const password = ref('');
 const router = useRouter();
 
-// Gestion de l'inscription
-const handleSignup = () => {
-  // Simulez une logique d'inscription (par exemple, enregistrement dans une base de données)
-  console.log({
-    username: username.value,
-    email: email.value,
-    password: password.value,
-  });
+// Validation du formulaire
+const validateForm = () => {
+    if (!username.value || !email.value || !password.value) {
+        alert('Veuillez remplir tous les champs.');
+        return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+        alert('Veuillez entrer une adresse email valide.');
+        return false;
+    }
+    if (password.value.length < 6) {
+        alert('Le mot de passe doit contenir au moins 6 caractères.');
+        return false;
+    }
+    return true;
+};
 
-  // Redirection vers le tableau de bord après inscription
-  router.push('/dashboard');
+// Gestion de l'inscription
+const handleSignup = async () => {
+    if (!validateForm()) return;
+
+    try {
+        const response = await apiClient.post('/auth/register', {
+            username: username.value,
+            email: email.value,
+            password: password.value,
+        });
+
+        console.log('Réponse du backend:', response.data);
+        alert('Inscription réussie !');
+        router.push('/login'); // Redirige vers la page de connexion
+    } catch (error) {
+        console.error('Erreur lors de l\'inscription:', error.response?.data || error.message);
+        alert('Échec de l\'inscription. Veuillez réessayer.');
+    }
 };
 </script>
-
 <style scoped>
 /* Animation d'entrée */
 .fade-in {

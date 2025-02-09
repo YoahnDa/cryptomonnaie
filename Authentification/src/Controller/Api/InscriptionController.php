@@ -8,6 +8,7 @@ use App\Entity\Token;
 use App\Entity\User;
 use App\Repository\TokenRepository;
 use App\Service\EmailProvider;
+use App\Service\VerificationToken;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -57,7 +58,7 @@ class InscriptionController extends AbstractController
      * )
      */
     #[Route('/api/inscription', name: 'app_api_inscription', methods: ['POST'])]
-    public function inscription(Request $request, ValidatorInterface $validator, UserPasswordHasherInterface $passwordEncoder, SerializerInterface $serializer, JWTTokenManagerInterface $jwtManager, EntityManagerInterface $entity, UrlGeneratorInterface $urlGenerator, MailerInterface $mailer, EmailProvider $emailProvider): JsonResponse
+    public function inscription(Request $request, ValidatorInterface $validator, UserPasswordHasherInterface $passwordEncoder, SerializerInterface $serializer, VerificationToken $jwtManager, EntityManagerInterface $entity, UrlGeneratorInterface $urlGenerator, MailerInterface $mailer, EmailProvider $emailProvider): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -124,7 +125,7 @@ class InscriptionController extends AbstractController
      * )
      */
     #[Route('/api/inscription/admin', name: 'app_api_inscription_admin', methods: ['POST'])]
-    public function inscriptionAdmin(Request $request, ValidatorInterface $validator, UserPasswordHasherInterface $passwordEncoder, SerializerInterface $serializer, JWTTokenManagerInterface $jwtManager, EntityManagerInterface $entity, UrlGeneratorInterface $urlGenerator, MailerInterface $mailer, EmailProvider $emailProvider): JsonResponse
+    public function inscriptionAdmin(Request $request, ValidatorInterface $validator, UserPasswordHasherInterface $passwordEncoder, SerializerInterface $serializer, VerificationToken $jwtManager, EntityManagerInterface $entity, UrlGeneratorInterface $urlGenerator, MailerInterface $mailer, EmailProvider $emailProvider): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -185,7 +186,7 @@ class InscriptionController extends AbstractController
      * )
      */
     #[Route('/api/verification/{token}', name: 'app_api_verification', methods: ['GET'])]
-    public function verification(Request $request, JWTTokenManagerInterface $jwtManager, EntityManagerInterface $entity): Response
+    public function verification(Request $request, VerificationToken $jwtManager, EntityManagerInterface $entity): Response
     {
         $token = $request->get('token');
 
@@ -229,13 +230,6 @@ class InscriptionController extends AbstractController
 
         ($userReal->getIdEmail())->setVerified(true);
 
-        $newPayload = [
-            'id' => $userReal->getId(),
-            'isUsed' => true,
-            'exp' => $expirationTimestamp,
-            'iat' => ($tokenBase->getCreatedAt())->getTimestamp()
-        ];
-
         if (!($entity->getRepository(Token::class)->findAuthToken($userReal))) {
             $payLoadAuth = [
                 'id' => $userReal->getId(),
@@ -246,12 +240,12 @@ class InscriptionController extends AbstractController
             $tokenAuth->setIdUser($userReal);
             $tokenAuth->setType('AUTH');
             $tokenAuth->setCreatedAt($dateCreate);
-            $tokenAuth->setToken($jwtManager->createFromPayload($userReal, $payLoadAuth));
+            $tokenAuth->setToken($jwtManager->generateUniqueToken($userReal->getUserName()));
 
             $entity->persist($tokenAuth);
         }
 
-        $tokenNew = $jwtManager->createFromPayload($userReal, $newPayload);
+        $tokenNew = $jwtManager->generateUniqueToken($userReal->getUserName());
         $tokenBase->setToken($tokenNew);
         $tokenBase->setUsed(true);
 

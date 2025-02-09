@@ -75,7 +75,7 @@ namespace Backend_Crypto.Controllers
                 {
                     id = user["id"].ToObject<int>(),
                     username = user["username"].ToString(),
-                    email = user["email"].ToString(),
+                    email = user["idEmail"]["value"].ToString(),
                     isAdmin = roles != null && roles.Contains("ROLE_ADMIN")
                 };
                 return Ok(userRet);
@@ -102,7 +102,7 @@ namespace Backend_Crypto.Controllers
             try
             {
                 JObject retour = await _externalApiService.PostDataToApiAsync("login", info);
-                return Ok(retour != null && retour["message"] != null ? retour["message"] : "Email envoyer");
+                return Ok("PIN de verification envoyer à votre email.");
             }catch(ApiException ex)
             {
                 ModelState.AddModelError("error", ex.Message);
@@ -125,7 +125,7 @@ namespace Backend_Crypto.Controllers
             try
             {
                 JObject retour = await _externalApiService.PostDataToApiAsync("inscription", info);
-                return Ok(retour != null && retour["message"] != null ? retour["message"] : "Email envoyer");
+                return Ok("Email de verification envoyer.");
             }
             catch (ApiException ex)
             {
@@ -169,7 +169,7 @@ namespace Backend_Crypto.Controllers
         [ProducesResponseType(406)]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> Authentification([FromBody] dynamic data)
+        public async Task<IActionResult> Authentification([FromBody] PinDto data)
         {
             int pin = data.pin;
             if (pin == null)
@@ -177,13 +177,13 @@ namespace Backend_Crypto.Controllers
 
             try
             {
-                JObject pinObj = new JObject();
-                pinObj["pin"] = data.pin;
-                JObject retour = await _externalApiService.PostDataToApiAsync("pin_verification", pinObj);
+                JObject retour = await _externalApiService.PostDataToApiAsync("pin_verification", data);
                 if(retour != null && retour["token"] != null)
                 {
-                    JObject tokenRetour = new JObject();
-                    tokenRetour["token"] = retour["token"];
+                    TokenDto tokenRetour = new TokenDto() 
+                    { 
+                        token = retour["token"].ToString()
+                    };
 
                     JObject user = await _externalApiService.GetDataFromApiAsync("user", retour["token"].ToString());
                     if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))

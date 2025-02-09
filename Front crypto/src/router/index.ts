@@ -19,7 +19,7 @@ import Signup from '../views/Signup.vue';
 import UserHistory from '../views/UserHistory.vue';
 
 const routes = [
-  { path: '/', redirect: '/login' },
+  { path: '/', redirect: '/signup' },
   { path: '/dashboard', component: Dashboard },
   { path: '/login', component: Login },
   { path: '/profile', component: Profile},

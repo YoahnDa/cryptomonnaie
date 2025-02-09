@@ -103,7 +103,7 @@ Voici le détail des fonctionnalités demandées :
 
 
 
-ameliorer et centrer le css seulement de cet template avec animation possible:
+*npm install axios
 
 
 

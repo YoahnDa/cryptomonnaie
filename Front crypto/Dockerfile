@@ -1,26 +1,26 @@
-# Utiliser l'image officielle de Node.js comme image de base
-FROM node:14
+# Étape 1 : Build Vue.js avec une image légère
+FROM node:20-alpine AS build
 
-# Définir le répertoire de travail dans le conteneur
+# Définir le répertoire de travail
 WORKDIR /app
 
-# Copier le fichier package.json et package-lock.json dans le répertoire de travail
-COPY package*.json ./
+# Copier uniquement les fichiers nécessaires pour l’installation
+COPY package.json package-lock.json ./
 
-# Installer les dépendances du projet
-RUN npm install
+# Installer les dépendances uniquement pour la production
+RUN npm ci --only=production
 
-# Copier tout le contenu du projet dans le répertoire de travail
+# Copier le reste des fichiers (code source)
 COPY . .
 
-# Construire l'application Vue.js pour la production
-RUN npm run build
+# Compiler Vue.js (en une seule étape pour réduire le nombre de couches)
+RUN npm ci && npm run build
 
-# Utiliser une image de serveur web pour servir l'application
+# Étape 2 : Servir l’application avec Nginx
 FROM nginx:alpine
 
-# Copier les fichiers de build dans le répertoire de Nginx
-COPY --from=0 /app/dist /usr/share/nginx/html
+# Copier uniquement les fichiers de build dans l’image finale
+COPY --from=build /app/dist /usr/share/nginx/html
 
 # Exposer le port 80
 EXPOSE 80
