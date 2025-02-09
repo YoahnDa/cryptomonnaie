@@ -30,8 +30,17 @@ catch (Exception ex)
 }
 
 builder.Services.AddScoped<MigrationServices>();
+builder.Services.AddScoped<MigrationServiceReverse>();
 builder.Services.AddScoped<AnalytiqueCryptoService>();
 builder.Services.AddScoped<UserAnalytique>();
+builder.Services.AddScoped<CrudCryptoFirebase>();
+builder.Services.AddScoped<CrudFavorisFirebase>();
+builder.Services.AddScoped<CrudHistoriquePrixFirebase>();
+builder.Services.AddScoped<CrudOrdreFirebase>();
+builder.Services.AddScoped<CrudPortefeuilleFirebase>();
+builder.Services.AddScoped<CrudStockFirebase>();
+builder.Services.AddScoped<CrudTransactionFirebase>();
+builder.Services.AddScoped<EmailProvider>();
 builder.Services.AddSingleton<IServiceScopeFactory>(sp => sp.GetRequiredService<IServiceScopeFactory>());
 builder.Services.AddHostedService<CryptoUpdateServices>(); // Ajout du service en arrière-plan
 builder.Services.AddControllers();
@@ -39,7 +48,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ExternalApiService>();
 builder.Services.AddHttpClient<ExternalApiService>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:8000/api/");// Adresse de base de l'API externe
+    client.BaseAddress = new Uri("http://authentication-api:8000/api/");// Adresse de base de l'API externe
     client.DefaultRequestHeaders.Add("Accept", "application/json"); // Headers par défaut
 });
 builder.Services.AddLogging(); // Ajout du logger si nécessaire
@@ -56,6 +65,8 @@ builder.Services.AddScoped<IPorteFeuilleRepository, PorteFeuilleRepository>();
 builder.Services.AddScoped<IHistoriqueRepository, HistoriqueRepository>();
 builder.Services.AddScoped<ITransactionRepository,TransactionRepository>();
 builder.Services.AddScoped<IFavorisRepository,FavorisRepository>();
+builder.Services.AddScoped<IAuthTokenRepository,AuthTokenRepository>();
+builder.Services.AddScoped<IStockPortefeuilleRepository,StockPortefeuilleRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -72,9 +83,9 @@ using (var scope = app.Services.CreateScope())
     Console.WriteLine("✅ Migrations appliquées avec succès ! \n Hello !!! Et démarrage de la simulation.");
 
     // Exécuter la migration vers Firestore
-    var migrationService = scope.ServiceProvider.GetRequiredService<MigrationServices>();
-    await migrationService.MigrateDataIfNeeded();
-    Console.WriteLine("✅ Migration vers Firestore terminée !");
+    var migrationService = scope.ServiceProvider.GetRequiredService<MigrationServiceReverse>();
+    await migrationService.MigrateDataFromFirebaseAsync();
+    Console.WriteLine("✅ Migration de Firestore terminée !");
 
 }
 

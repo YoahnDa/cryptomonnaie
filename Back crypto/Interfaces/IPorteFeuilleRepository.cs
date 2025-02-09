@@ -14,6 +14,7 @@ namespace Backend_Crypto.Interfaces
         bool HaveCrypto(int idUser,int idCrypto);
         bool HaveEnoughCrypto(int idUser,int idCrypto,double  need);
         bool UpdatePortefeuille(Portefeuille portefeuille);
+        StockPortefeuille getStock(int idUser, int idCrypto);
         bool ExchangeFond(Portefeuille porte, double fond, bool isRetrait);
         bool Save();
     }

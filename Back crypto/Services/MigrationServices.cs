@@ -13,14 +13,16 @@ namespace Backend_Crypto.Services
     {
         private readonly FirestoreDb _firestore;
         private readonly DataContext _dbContext;
+        private readonly ICryptoRepository _cryptoRepository;
         private readonly IMapper _mapper;
 
-        public MigrationServices(DataContext dbContext,IMapper mapper)
+        public MigrationServices(DataContext dbContext,IMapper mapper, ICryptoRepository cryptoRepository)
         {
             // Remplacez "TON_PROJET_FIREBASE" par l'ID de votre projet Firebase
             _firestore = FirestoreDb.Create("testfirebaseproject-8cc5e");
             _dbContext = dbContext;
             _mapper = mapper;
+            _cryptoRepository = cryptoRepository;
         }
 
         public async Task MigrateDataIfNeeded()
@@ -54,7 +56,8 @@ namespace Backend_Crypto.Services
                     await docRef.SetAsync(new { 
                         cryptoDto.IdCrypto,
                         cryptoDto.Nom,
-                        cryptoDto.Symbole
+                        cryptoDto.Symbole,
+                        prix = _cryptoRepository.GetPrixCrypto(cryptoDto.IdCrypto)
                     });
                 }
                 Console.WriteLine("Migration des utilisateurs terminée !");

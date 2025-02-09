@@ -22,9 +22,11 @@ namespace Backend_Crypto.Helper
             CreateMap<Crypto,CryptoFirebaseDto>();
             CreateMap<Favoris,FavorisDto>();
             CreateMap<HistoriquePrix,HistoriquePrixFirebaseDto>();
+            CreateMap<HistoriquePrixFirebaseDto,HistoriquePrix>();
             CreateMap<Ordre,OrdreDto>();
             CreateMap<Ordre,OrdreFirebaseDto>();
             CreateMap<Portefeuille,PortefeuilleFirebaseDto>();
+            CreateMap<PortefeuilleFirebaseDto, Portefeuille>();
             CreateMap<StockPortefeuille,StockDto>();
             CreateMap<StockPortefeuille,StockFirebaseDto>();
             CreateMap<Transaction,TransactionFirebaseDto>();

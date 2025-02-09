@@ -17,14 +17,18 @@ namespace Backend_Crypto.Controllers
         private readonly ICryptoRepository _cryptoRepository;
         private readonly IHistoriqueRepository _historiqueRepository;
         private readonly IMapper _mapper;
+        private readonly CrudCryptoFirebase _cryptoFirebase;
+        private readonly CrudHistoriquePrixFirebase _historique;
         private readonly AnalytiqueCryptoService _analyzer;
 
-        public CryptoController(ICryptoRepository cryptoRepository, IMapper mapper,IHistoriqueRepository historique, AnalytiqueCryptoService analytiqueCryptoService)
+        public CryptoController(ICryptoRepository cryptoRepository, IMapper mapper,CrudHistoriquePrixFirebase histo,IHistoriqueRepository historique, AnalytiqueCryptoService analytiqueCryptoService, CrudCryptoFirebase cryptoFirebase)
         {
             _cryptoRepository = cryptoRepository;
             _analyzer = analytiqueCryptoService;
             _historiqueRepository = historique;
             _mapper = mapper;
+            _historique = histo;
+            _cryptoFirebase = cryptoFirebase;
         }
 
         // GET: api/<Crypto>
@@ -76,7 +80,7 @@ namespace Backend_Crypto.Controllers
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult CreateCrypto([FromBody] CryptoCreateData value)
+        public async Task<IActionResult> CreateCrypto([FromBody] CryptoCreateData value)
         {
             if(value == null)
                 return BadRequest(ModelState);
@@ -104,7 +108,9 @@ namespace Backend_Crypto.Controllers
                 ModelState.AddModelError("error", "Erreur lors du sauvegarde");
                 return StatusCode(500, ModelState);
             }
-
+            await _cryptoFirebase.CreateCryptoAsync(_mapper.Map<CryptoFirebaseDto>(_cryptoRepository.findByName(value.name)));
+            var histo = _cryptoRepository.GetFirstHisto(_cryptoRepository.findByName(value.name).IdCrypto);
+            await _historique.CreateHistoriqueAsync(_mapper.Map<HistoriquePrixFirebaseDto>(histo));
             return Ok("Nouveau crypto créer.");
         }
 
@@ -113,7 +119,7 @@ namespace Backend_Crypto.Controllers
         [ProducesResponseType(404)]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult UpdateCrypto([FromBody] CryptoUpdateDto value)
+        public async Task<IActionResult> UpdateCrypto([FromBody] CryptoUpdateDto value)
         {
             if(value==null) return BadRequest();
 
@@ -141,7 +147,7 @@ namespace Backend_Crypto.Controllers
                 ModelState.AddModelError("error", "Erreur lors du sauvegarde");
                 return StatusCode(500, ModelState);
             }
-
+            await _cryptoFirebase.UpdateCryptoAsync(_mapper.Map<CryptoFirebaseDto>(_cryptoRepository.GetCrypto(value.IdCrypto)));
             return Ok("Update du crypto fini.");
         }
         
@@ -149,7 +155,7 @@ namespace Backend_Crypto.Controllers
         [ProducesResponseType(404)]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult deleteCrypto(int id)
+        public async Task<IActionResult> deleteCrypto(int id)
         {
             if(!_cryptoRepository.CryptoExist(id))
                 return NotFound();
@@ -173,6 +179,7 @@ namespace Backend_Crypto.Controllers
                 ModelState.AddModelError("error", "Erreur lors du sauvegarde");
                 return StatusCode(500, ModelState);
             }
+            await _cryptoFirebase.DeleteCryptoAsync(id.ToString());
             return Ok("Suppression effectué.");
         }
 

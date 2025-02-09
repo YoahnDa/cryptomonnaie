@@ -34,7 +34,7 @@ namespace Backend_Crypto.Services
                     // Si la réponse est OK (status 2xx), lire les données
                     var jsonResponse = await response.Content.ReadAsStringAsync();  
 
-                    if (string.IsNullOrEmpty(jsonResponse))
+                    if (!string.IsNullOrEmpty(jsonResponse))
                     {
                         return JObject.Parse(jsonResponse);
                     }
@@ -64,12 +64,12 @@ namespace Backend_Crypto.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Si la requête est réussie, retourner true
                     // Si la réponse est OK (status 2xx), lire les données
                     var jsonResponse = await response.Content.ReadAsStringAsync();
 
-                    if (string.IsNullOrEmpty(jsonResponse))
+                    if (!string.IsNullOrEmpty(jsonResponse))
                     {
+                        Console.WriteLine("Reponse de retour : "+jsonResponse);
                         return JObject.Parse(jsonResponse);
                     }
                     return null; 

@@ -16,6 +16,7 @@ namespace Backend_Crypto.Interfaces
         Crypto? findBySymbole(string symbole);
         bool updateCrypto(Crypto crypto);
         bool removeCrypto(Crypto crypto);
+        HistoriquePrix GetFirstHisto(int idCrypto);
         bool Save();
     }
 }

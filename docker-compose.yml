@@ -1,0 +1,75 @@
+services:
+  # Base de données PostgreSQL
+  backend_crypto-db:
+    image: postgres:latest
+    container_name: backend_crypto-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: crypto_tp
+    networks:
+      - backend_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+      timeout: 3s
+
+  # Backend Crypto Service (API en .NET)
+  backend_crypto-api:
+    build: ./Back crypto
+    container_name: backend_crypto-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__PostgreSqlConnection=Host=backend_crypto-db;Port=5432;Username=postgres;Password=root;Database=crypto_tp
+      - ASPNETCORE_ENVIRONMENT=Development
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/App_Data/firebase/credentials.json
+    depends_on:
+      backend_crypto-db:
+        condition: service_healthy
+    networks:
+      - backend_network
+    command: >
+      sh -c "php bin/console doctrine:database:create --if-not-exists &&
+           php bin/console doctrine:migrations:migrate --no-interaction &&
+           php -S 0.0.0.0:8000 -t public"
+
+  # Authentification Service (Symfony API)
+  authentication:
+    build:
+      context: ./Authentification
+      dockerfile: Dockerfile
+    container_name: authentication-api
+    ports:
+      - "8000:8000"
+    networks:
+      - backend_network
+    environment:
+      - DATABASE_URL=postgresql://postgres:root@backend_crypto-db:5432/tpCloud
+    depends_on:
+      backend_crypto-db:
+        condition: service_healthy
+
+  # Frontend Service (React/Vue/Autre)
+  frontend:
+    build:
+      context: ./Front crypto
+      dockerfile: Dockerfile
+    container_name: frontend-app
+    ports:
+      - "3000:80"
+    networks:
+      - backend_network
+    depends_on:
+      authentication:
+        condition: service_started
+
+networks:
+  backend_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

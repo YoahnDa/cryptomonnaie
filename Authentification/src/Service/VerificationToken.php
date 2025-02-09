@@ -36,4 +36,12 @@ class VerificationToken
             }
         }
     }
+
+    public function generateUniqueToken($userIdentifier)
+    {
+        // Utilisation de l'heure actuelle et de l'identifiant de l'utilisateur pour créer une base unique
+        $timestamp = time();
+        $randomString = bin2hex(random_bytes(16));  // Génère une chaîne aléatoire de 16 octets
+        return hash('sha256', $userIdentifier . $timestamp . $randomString);
+    }
 }

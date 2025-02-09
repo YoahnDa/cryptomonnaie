@@ -10,5 +10,6 @@ namespace Backend_Crypto.Interfaces
         bool CreateFavoris(int idcrypto,int idUser);
         bool removeFavoris(int idCrypto,int idUser);
         bool Save();
+        Favoris getFavoris(int idCrypto, int idUser);
     }
 }
