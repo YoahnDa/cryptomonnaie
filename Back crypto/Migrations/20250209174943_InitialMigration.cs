@@ -164,7 +164,6 @@ namespace Backend_Crypto.Migrations
                     IdToken = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Token = table.Column<string>(type: "TEXT", nullable: false),
-                    DateExpiration = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsUsed = table.Column<bool>(type: "boolean", nullable: false),
                     IdTransaction = table.Column<int>(type: "integer", nullable: false)
                 },

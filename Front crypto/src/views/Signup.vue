@@ -90,6 +90,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '../plugins/axios'; // Importez Axios
+import axios, { AxiosError } from 'axios'; // Importer Axios et son type
 
 const username = ref('');
 const email = ref('');
@@ -128,8 +129,15 @@ const handleSignup = async () => {
         alert('Inscription réussie !');
         router.push('/login'); // Redirige vers la page de connexion
     } catch (error) {
-        console.error('Erreur lors de l\'inscription:', error.response?.data || error.message);
-        alert('Échec de l\'inscription. Veuillez réessayer.');
+      if (axios.isAxiosError(error)) {
+          console.error('Erreur lors de l\'inscription:', error.response?.data || error.message);
+          alert('Échec de l\'inscription. Veuillez réessayer.');
+        } else if (error instanceof Error) {
+            console.error('Erreur générale lors de la demande de renvoi du PIN:', error.message);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        } else {
+            console.error('Erreur inconnue lors de la demande de renvoi du PIN:', error);
+        }
     }
 };
 </script>

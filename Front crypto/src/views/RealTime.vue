@@ -70,8 +70,22 @@
 import { ref, computed } from 'vue';
 import Sidebar from '../components/Sidebar.vue';
 
-// Données des cryptomonnaies
-const cryptos = ref([
+// Type pour un objet crypto
+interface Crypto {
+  id: number;
+  rank: number;
+  name: string;
+  symbol: string;
+  icon: string;
+  price: number;
+  change: number;
+  volume: number;
+  marketCap: number;
+  favorite: boolean;
+}
+
+// Données des cryptos
+const cryptos = ref<Crypto[]>([
   {
     id: 1,
     rank: 1,
@@ -111,20 +125,20 @@ const cryptos = ref([
 ]);
 
 // État de tri
-const sortKey = ref('');
-const sortOrder = ref(1);
+const sortKey = ref<string>('');
+const sortOrder = ref<number>(1);
 
-// Tri des cryptomonnaies
+// Tri des cryptos
 const filteredCryptos = computed(() => {
   return [...cryptos.value].sort((a, b) => {
-    if (a[sortKey.value] < b[sortKey.value]) return -1 * sortOrder.value;
-    if (a[sortKey.value] > b[sortKey.value]) return 1 * sortOrder.value;
+    if (a[sortKey.value as keyof Crypto] < b[sortKey.value as keyof Crypto]) return -1 * sortOrder.value;
+    if (a[sortKey.value as keyof Crypto] > b[sortKey.value as keyof Crypto]) return 1 * sortOrder.value;
     return 0;
   });
 });
 
 // Fonction de tri
-const sortBy = (key) => {
+const sortBy = (key: string): void => {
   if (sortKey.value === key) {
     sortOrder.value *= -1; // Inverser l'ordre si la même clé est cliquée
   } else {
@@ -134,12 +148,12 @@ const sortBy = (key) => {
 };
 
 // Ajouter/Retirer des favoris
-const toggleFavorite = (crypto) => {
+const toggleFavorite = (crypto: Crypto): void => {
   crypto.favorite = !crypto.favorite;
 };
 
 // Formatage des grands nombres
-const formatNumber = (value) => {
+const formatNumber = (value: number): string => {
   return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value);
 };
 </script>

@@ -48,7 +48,7 @@
 
                 <!-- Bouton Login -->
                 <button type="submit" class="btn btn-primary w-100 login-btn">
-                  <span>Login</span>
+                  <span>Se connecter</span>
                   <i class="bi bi-arrow-right"></i>
                 </button>
               </form>
@@ -90,13 +90,15 @@
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '../plugins/axios'; // Importez Axios
+import axios, { AxiosError } from 'axios'; // Importer Axios et son type
 
 const router = useRouter();
-const email = ref('');
+const username = ref('');
 const password = ref('');
 const showPinModal = ref(false);
 const enteredPin = ref('');
@@ -106,16 +108,23 @@ const tempPin = ref('');
 const handleLogin = async () => {
     try {
         const response = await apiClient.post('/auth/login', {
-            email: email.value,
+            username: username.value,
             password: password.value,
         });
 
         console.log('Réponse du backend:', response.data);
         tempPin.value = response.data.tempPin; // Supposons que le backend renvoie un PIN temporaire
         showPinModal.value = true;
-    } catch (error) {
-        console.error('Erreur lors de la connexion:', error.response?.data || error.message);
-        alert('Identifiants incorrects. Veuillez réessayer.');
+    } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+            console.error('Erreur Axios lors de la connexion:', error.response?.data || error.message);
+            alert(error.response?.data?.message || 'Identifiants incorrects. Veuillez réessayer.');
+        } else if (error instanceof Error) {
+            console.error('Erreur générale lors de la connexion:', error.message);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        } else {
+            console.error('Erreur inconnue lors de la connexion:', error);
+        }
     }
 };
 
@@ -123,7 +132,7 @@ const handleLogin = async () => {
 const verifyPin = async () => {
     try {
         const response = await apiClient.post('/auth/verify-pin', {
-            email: email.value,
+            username: username.value,
             pin: enteredPin.value,
         });
 
@@ -135,8 +144,13 @@ const verifyPin = async () => {
             alert('PIN incorrect. Veuillez réessayer.');
         }
     } catch (error) {
-        console.error('Erreur lors de la vérification du PIN:', error.response?.data || error.message);
-        alert('Une erreur s\'est produite. Veuillez réessayer.');
+        if (axios.isAxiosError(error)) {
+            console.error('Erreur Axios lors de la vérification du PIN:', error.response?.data || error.message);
+            alert(error.response?.data?.message || 'Une erreur s\'est produite. Veuillez réessayer.');
+        } else {
+            console.error('Erreur inconnue lors de la vérification du PIN:', error);
+            alert('Une erreur s\'est produite. Veuillez réessayer.');
+        }
     }
 };
 
@@ -144,21 +158,26 @@ const verifyPin = async () => {
 const resendPin = async () => {
     try {
         const response = await apiClient.post('/auth/resend-pin', {
-            email: email.value,
+            username: username.value,
         });
 
         if (response.status === 200) {
             tempPin.value = response.data.tempPin;
             alert('Un nouveau PIN a été envoyé à votre email.');
         }
-    } catch (error) {
-        console.error('Erreur lors de la demande de renvoi du PIN:', error.response?.data || error.message);
-        alert('Une erreur s\'est produite. Veuillez réessayer.');
+    } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+            console.error('Erreur Axios lors de la demande de renvoi du PIN:', error.response?.data || error.message);
+            alert(error.response?.data?.message || 'Une erreur s\'est produite. Veuillez réessayer.');
+        } else if (error instanceof Error) {
+            console.error('Erreur générale lors de la demande de renvoi du PIN:', error.message);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        } else {
+            console.error('Erreur inconnue lors de la demande de renvoi du PIN:', error);
+        }
     }
 };
 </script>
-
-
 <style scoped>
 /* Modal Overlay */
 .pin-modal-overlay {

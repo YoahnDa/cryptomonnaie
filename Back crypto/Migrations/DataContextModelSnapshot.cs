@@ -30,9 +30,6 @@ namespace Backend_Crypto.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdToken"));
 
-                    b.Property<DateTime>("DateExpiration")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("IdTransaction")
                         .HasColumnType("integer");
 

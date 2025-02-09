@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend_Crypto.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250207063716_InitialMigration")]
+    [Migration("20250209174943_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -32,9 +32,6 @@ namespace Backend_Crypto.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdToken"));
-
-                    b.Property<DateTime>("DateExpiration")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("IdTransaction")
                         .HasColumnType("integer");

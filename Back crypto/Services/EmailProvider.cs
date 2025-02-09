@@ -19,16 +19,14 @@ namespace Backend_Crypto.Services
         private readonly ILogger<EmailProvider> _logger;
         private readonly ExternalApiService _externalApiService;
         private readonly ITokenValidator _tokenValidator;
-        private readonly IAuthTokenRepository _tokenRepository;
         private readonly DataContext _context;
 
-        public EmailProvider(DataContext context, ILogger<EmailProvider> logger, ExternalApiService apiService,ITokenValidator tokenValid,IAuthTokenRepository tokenRepository)
+        public EmailProvider(DataContext context, ILogger<EmailProvider> logger, ExternalApiService apiService,ITokenValidator tokenValid)
         {
             _context = context;
             _logger = logger;
             _externalApiService = apiService;
             _tokenValidator = tokenValid;
-            _tokenRepository = tokenRepository;
         }
 
         public async Task SendEmailAutorisationVente(string tokenTransac,string email)

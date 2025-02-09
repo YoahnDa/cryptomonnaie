@@ -71,7 +71,7 @@
 
       <!-- Graphique en courbe -->
       <div class="chart-container">
-        <LineChart :data="chartData" :options="chartOptions" />
+        <LineChart :data="chartData" :options="chartOptions"/>
       </div>
     </div>
   </div>
@@ -146,7 +146,7 @@ const chartOptions = {
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      position: 'bottom',
+      position: 'bottom' as const,
     },
   },
   scales: {
