@@ -90,10 +90,10 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import apiClient from '../plugins/axios'; // Importez Axios
 
 const router = useRouter();
 const email = ref('');
@@ -102,30 +102,61 @@ const showPinModal = ref(false);
 const enteredPin = ref('');
 const tempPin = ref('');
 
-// Simuler la connexion
-const handleLogin = () => {
-  console.log('Connexion avec :', { email: email.value, password: password.value });
+// Gestion de la connexion
+const handleLogin = async () => {
+    try {
+        const response = await apiClient.post('/auth/login', {
+            email: email.value,
+            password: password.value,
+        });
 
-  // Générer un PIN temporaire
-  tempPin.value = Math.floor(1234).toString();
-  console.log(`PIN envoyé : ${tempPin.value}`);
-
-  // Afficher le modal de vérification PIN
-  showPinModal.value = true;
+        console.log('Réponse du backend:', response.data);
+        tempPin.value = response.data.tempPin; // Supposons que le backend renvoie un PIN temporaire
+        showPinModal.value = true;
+    } catch (error) {
+        console.error('Erreur lors de la connexion:', error.response?.data || error.message);
+        alert('Identifiants incorrects. Veuillez réessayer.');
+    }
 };
 
 // Vérification du PIN
-const verifyPin = () => {
-  if (enteredPin.value === tempPin.value) {
-    alert('Authentification réussie ! Redirection...');
-    showPinModal.value = false; // Fermer le modal
-    router.push('/dashboard');
-  } else {
-    alert('PIN incorrect. Veuillez réessayer.');
-  }
+const verifyPin = async () => {
+    try {
+        const response = await apiClient.post('/auth/verify-pin', {
+            email: email.value,
+            pin: enteredPin.value,
+        });
+
+        if (response.status === 200) {
+            alert('Authentification réussie ! Redirection...');
+            showPinModal.value = false;
+            router.push('/dashboard');
+        } else {
+            alert('PIN incorrect. Veuillez réessayer.');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la vérification du PIN:', error.response?.data || error.message);
+        alert('Une erreur s\'est produite. Veuillez réessayer.');
+    }
+};
+
+// Renvoyer le PIN
+const resendPin = async () => {
+    try {
+        const response = await apiClient.post('/auth/resend-pin', {
+            email: email.value,
+        });
+
+        if (response.status === 200) {
+            tempPin.value = response.data.tempPin;
+            alert('Un nouveau PIN a été envoyé à votre email.');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la demande de renvoi du PIN:', error.response?.data || error.message);
+        alert('Une erreur s\'est produite. Veuillez réessayer.');
+    }
 };
 </script>
-
 
 
 <style scoped>
