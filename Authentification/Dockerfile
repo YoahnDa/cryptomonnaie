@@ -22,6 +22,11 @@ RUN rm -rf var/cache/*
 RUN composer install --no-interaction --optimize-autoloader --no-progress \
     && composer dump-autoload --no-dev --optimize
 
+RUN php bin/console doctrine:database:create --if-not-exists
+
+# Exécuter les migrations automatiquement
+RUN php bin/console doctrine:migrations:migrate --no-interaction
+
 # Définir les permissions
 RUN chown -R www-data:www-data /var/www/html
 

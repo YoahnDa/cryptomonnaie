@@ -72,9 +72,6 @@ class EmailProvider
         $entity->persist($tokenPin);
         $entity->flush();
 
-
-        $location = $this->host . $urlGen->generate('app_api_pin_verification', []);
-
         $emailMessage = (new Email())
             ->from('yoahndaniel37@gmail.com')
             ->to(($user->getIdEmail())->getValue())

@@ -3,5 +3,6 @@
     public interface ITokenValidator
     {
         string? GetTokenFromHeader();
+        string GenerateUniqueToken(string username);
     }
 }

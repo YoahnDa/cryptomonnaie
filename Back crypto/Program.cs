@@ -32,6 +32,7 @@ catch (Exception ex)
 builder.Services.AddScoped<MigrationServices>();
 builder.Services.AddScoped<AnalytiqueCryptoService>();
 builder.Services.AddScoped<UserAnalytique>();
+builder.Services.AddScoped<EmailProvider>();
 builder.Services.AddSingleton<IServiceScopeFactory>(sp => sp.GetRequiredService<IServiceScopeFactory>());
 builder.Services.AddHostedService<CryptoUpdateServices>(); // Ajout du service en arrière-plan
 builder.Services.AddControllers();
@@ -56,6 +57,8 @@ builder.Services.AddScoped<IPorteFeuilleRepository, PorteFeuilleRepository>();
 builder.Services.AddScoped<IHistoriqueRepository, HistoriqueRepository>();
 builder.Services.AddScoped<ITransactionRepository,TransactionRepository>();
 builder.Services.AddScoped<IFavorisRepository,FavorisRepository>();
+builder.Services.AddScoped<IAuthTokenRepository,AuthTokenRepository>();
+builder.Services.AddScoped<IStockPortefeuilleRepository,StockPortefeuilleRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

@@ -68,6 +68,12 @@ namespace Backend_Crypto.Repository
             return stock != null && stock.Stock >= need;
         }
 
+        public StockPortefeuille getStock(int idUser,int idCrypto)
+        {
+            var portefeuille = GetPortefeuille(idUser);
+            return portefeuille.Stock.FirstOrDefault(c => c.IdCrypto == idCrypto);
+        }
+
 
         public bool HaveEnoughFond(int idUser , double need)
         {

@@ -5,7 +5,11 @@ using Backend_Crypto.Models;
 using Backend_Crypto.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json.Linq;
+using static Google.Cloud.Firestore.V1.StructuredQuery.Types;
+using static System.Net.Mime.MediaTypeNames;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -21,10 +25,13 @@ namespace Backend_Crypto.Controllers
         private readonly ICryptoRepository _cryptoRepository;
         private readonly UserAnalytique _analyser;
         private readonly ExternalApiService _externalApiService;
+        private readonly IAuthTokenRepository _tokenRepository;
+        private readonly IStockPortefeuilleRepository _stockPortefeuilleRepository;
         private readonly IMapper _mapper;
-        public PortefeuilleController(IPorteFeuilleRepository portefeuilleRepository, ITokenValidator tokenValidator , ExternalApiService apiService , IMapper mapper , ITransactionRepository transaction, ICryptoRepository cryptoRepository, UserAnalytique analyse)
+        public PortefeuilleController(IPorteFeuilleRepository portefeuilleRepository, ITokenValidator tokenValidator , ExternalApiService apiService , IMapper mapper , ITransactionRepository transaction, ICryptoRepository cryptoRepository, UserAnalytique analyse, IStockPortefeuilleRepository stock)
         {
             _portefeuilleRepository = portefeuilleRepository;
+            _stockPortefeuilleRepository = stock;
             _cryptoRepository =  cryptoRepository;
             _transactionRepository = transaction;
             _tokenValidator = tokenValidator;
@@ -218,7 +225,7 @@ namespace Backend_Crypto.Controllers
             try
             {
                 JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
-                if (_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
+                if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
                 {
                     ModelState.AddModelError("error", "Vous n'avez pas encore de compte.");
                     return StatusCode(406, ModelState);
@@ -260,7 +267,7 @@ namespace Backend_Crypto.Controllers
             try
             {
                 JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
-                if (_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
+                if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
                 {
                     ModelState.AddModelError("error", "Vous n'avez pas encore de compte.");
                     return StatusCode(406, ModelState);
@@ -283,10 +290,193 @@ namespace Backend_Crypto.Controllers
             }
         }
 
-        // DELETE api/<PortefeuilleController>/5
-        [HttpDelete("{id}")]
-        public void Delete()
+        [HttpPost("achat")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(402)]
+        public async Task<IActionResult> SetVente([FromBody] OrdreFormDto data)
         {
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
+                {
+                    ModelState.AddModelError("error", "Vous n'avez pas encore de compte.");
+                    return StatusCode(406, ModelState);
+                }
+
+                if(!_cryptoRepository.CryptoExist(data.idCrypto))
+                {
+                    ModelState.AddModelError("error", "Le crypto n'existe pas.");
+                    return StatusCode(404, ModelState);
+                }
+
+                double prixAcheter = data.quantite * _cryptoRepository.GetPrixCrypto(data.idCrypto);
+
+                if (!_portefeuilleRepository.HaveEnoughFond(user["id"].ToObject<int>(), prixAcheter))
+                {
+                    ModelState.AddModelError("error", "Vous n'avez pas assez de fond pour cette operation.");
+                    return StatusCode(402, ModelState);
+                }
+                var ownPortefeuille = _mapper.Map<Portefeuille>(_portefeuilleRepository.GetPortefeuille(user["id"].ToObject<int>()));
+                Transaction transac = new Transaction()
+                {
+                    Type = TypeTransaction.Achat,
+                    PortefeuilleOwner = ownPortefeuille,
+                    fond = prixAcheter,
+                    Ordre = new Ordre()
+                    {
+                        PrixUnitaire = _cryptoRepository.GetPrixCrypto(data.idCrypto),
+                        AmountCrypto = data.quantite,
+                        CryptoOrdre = _cryptoRepository.GetCrypto(data.idCrypto)
+                    }
+                };
+
+                _tokenRepository.CreateToken(transac, user["username"].ToString(), user["idEmail"]["value"].ToString());
+                return Ok(new { message = "Achat enregistré avec succès en attente de votre validation par email." });
+
+            }
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
         }
+
+        [HttpPost("vente")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(402)]
+        public async Task<IActionResult> SetAchat([FromBody] OrdreFormDto data)
+        {
+            string token = _tokenValidator.GetTokenFromHeader();
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                JObject user = await _externalApiService.GetDataFromApiAsync("user", token);
+                if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
+                {
+                    ModelState.AddModelError("error", "Vous n'avez pas encore de compte.");
+                    return StatusCode(406, ModelState);
+                }
+
+                if (!_cryptoRepository.CryptoExist(data.idCrypto))
+                {
+                    ModelState.AddModelError("error", "Le crypto n'existe pas.");
+                    return StatusCode(404, ModelState);
+                }
+
+                double prixAcheter = data.quantite * _cryptoRepository.GetPrixCrypto(data.idCrypto);
+
+                if (!_portefeuilleRepository.HaveCrypto(user["id"].ToObject<int>(),data.idCrypto))
+                {
+                    ModelState.AddModelError("error", "Vous n'avez pas assez de cryptomonnaie pour cette operation.");
+                    return StatusCode(402, ModelState);
+
+                }
+                if (!_portefeuilleRepository.HaveEnoughCrypto(user["id"].ToObject<int>(), data.idCrypto,data.quantite))
+                {
+                    ModelState.AddModelError("error", "Vous n'avez pas assez de cryptomonnaie pour cette operation.");
+                    return StatusCode(402, ModelState);
+                }
+
+                var ownPortefeuille = _mapper.Map<Portefeuille>(_portefeuilleRepository.GetPortefeuille(user["id"].ToObject<int>()));
+
+                Transaction transac = new Transaction()
+                {
+                    Type = TypeTransaction.Vente,
+                    PortefeuilleOwner = ownPortefeuille,
+                    fond = prixAcheter,
+                    Ordre = new Ordre()
+                    {
+                        PrixUnitaire = _cryptoRepository.GetPrixCrypto(data.idCrypto),
+                        AmountCrypto = data.quantite,
+                        CryptoOrdre = _cryptoRepository.GetCrypto(data.idCrypto)
+                    }
+                };
+
+                _tokenRepository.CreateToken(transac, user["username"].ToString(), user["idEmail"]["value"].ToString());
+                return Ok(new { message = "Vente enregistré avec succès en attente de votre validation par email." });
+
+            }
+            catch (ApiException ex)
+            {
+                ModelState.AddModelError("error", ex.Message);
+                return StatusCode(ex.StatusCode, ModelState);
+            }
+        }
+
+        [HttpGet("validation")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(402)]
+        public async Task<IActionResult> ValidateTransac([FromQuery] String token)
+        {
+            if (!_tokenRepository.isTokenExist(token))
+            {
+                return RedirectToAction("Error", "Transaction", new { message = "Token de validation inexistante." });
+            }
+
+            if (!_tokenRepository.isTokenValid(token))
+            {
+                return RedirectToAction("Error", "Transaction", new { message = "Token expiré." });
+            }
+
+            var transaction = _tokenRepository.GetTransaction(token);
+            if(transaction.Type == TypeTransaction.Achat)
+            {
+                if (!_portefeuilleRepository.HaveEnoughFond(transaction.PortefeuilleOwner.IdUser, transaction.fond))
+                {
+                    return RedirectToAction("Error", "Transaction", new { message = "Vous avez plus assez de fond pour l'achat." });
+                }
+
+                if (!_portefeuilleRepository.HaveCrypto(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto))
+                {
+                    _portefeuilleRepository.AddStockPortefeuille(transaction.Ordre.CryptoOrdre,transaction.PortefeuilleOwner, transaction.Ordre.AmountCrypto);
+                }
+                _portefeuilleRepository.ExchangeFond(transaction.PortefeuilleOwner, transaction.fond, true);
+                var stockPort = _portefeuilleRepository.getStock(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto);
+                stockPort.Stock += transaction.Ordre.AmountCrypto;
+                _stockPortefeuilleRepository.updateStock(stockPort);
+                return RedirectToAction("Success", "Transaction", new { message = "Votre achat a été validé avec succès !" });
+            }
+            else if(transaction.Type == TypeTransaction.Vente)
+            {
+                if (!_portefeuilleRepository.HaveCrypto(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto))
+                {
+                    return RedirectToAction("Error", "Transaction", new { message = "Vous n'avez pas de cryptomonnaie pour la vente." });
+                }
+
+                if (!_portefeuilleRepository.HaveEnoughCrypto(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto, transaction.Ordre.AmountCrypto))
+                {
+                    return RedirectToAction("Error", "Transaction", new { message = "Vous n'avez pas assez de cryptomonnaie pour la vente." });
+                }
+
+                _portefeuilleRepository.ExchangeFond(transaction.PortefeuilleOwner, transaction.fond, false);
+                var stockPort = _portefeuilleRepository.getStock(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto);
+                stockPort.Stock -= transaction.Ordre.AmountCrypto;
+                if(stockPort.Stock <= 0)
+                {
+                    _stockPortefeuilleRepository.removeStock(stockPort);
+                }
+                else
+                {
+                    _stockPortefeuilleRepository.updateStock(stockPort);
+                }
+                return RedirectToAction("Success", "Transaction", new { message = "Votre vente a été validé avec succès !" });
+            }
+            return RedirectToAction("Error", "Transaction", new { message = "Transaction invalide ." });
+        }
+
     }
 }
