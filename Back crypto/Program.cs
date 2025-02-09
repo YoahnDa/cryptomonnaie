@@ -30,8 +30,16 @@ catch (Exception ex)
 }
 
 builder.Services.AddScoped<MigrationServices>();
+builder.Services.AddScoped<MigrationServiceReverse>();
 builder.Services.AddScoped<AnalytiqueCryptoService>();
 builder.Services.AddScoped<UserAnalytique>();
+builder.Services.AddScoped<CrudCryptoFirebase>();
+builder.Services.AddScoped<CrudFavorisFirebase>();
+builder.Services.AddScoped<CrudHistoriquePrixFirebase>();
+builder.Services.AddScoped<CrudOrdreFirebase>();
+builder.Services.AddScoped<CrudPortefeuilleFirebase>();
+builder.Services.AddScoped<CrudStockFirebase>();
+builder.Services.AddScoped<CrudTransactionFirebase>();
 builder.Services.AddScoped<EmailProvider>();
 builder.Services.AddSingleton<IServiceScopeFactory>(sp => sp.GetRequiredService<IServiceScopeFactory>());
 builder.Services.AddHostedService<CryptoUpdateServices>(); // Ajout du service en arrière-plan
@@ -75,9 +83,9 @@ using (var scope = app.Services.CreateScope())
     Console.WriteLine("✅ Migrations appliquées avec succès ! \n Hello !!! Et démarrage de la simulation.");
 
     // Exécuter la migration vers Firestore
-    var migrationService = scope.ServiceProvider.GetRequiredService<MigrationServices>();
-    await migrationService.MigrateDataIfNeeded();
-    Console.WriteLine("✅ Migration vers Firestore terminée !");
+    var migrationService = scope.ServiceProvider.GetRequiredService<MigrationServiceReverse>();
+    await migrationService.MigrateDataFromFirebaseAsync();
+    Console.WriteLine("✅ Migration de Firestore terminée !");
 
 }
 

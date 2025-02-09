@@ -1,4 +1,5 @@
-﻿using Backend_Crypto.Dto;
+﻿using AutoMapper;
+using Backend_Crypto.Dto;
 using Backend_Crypto.Interfaces;
 using Backend_Crypto.Models;
 using Backend_Crypto.Repository;
@@ -19,12 +20,20 @@ namespace Backend_Crypto.Controllers
         private readonly IPorteFeuilleRepository _porteFeuilleRepository;
         private readonly ExternalApiService _externalApiService;
         private readonly TokenValidator _tokenValidator;
+        private readonly CrudTransactionFirebase _crudTransactionFirebase;
+        private readonly CrudPortefeuilleFirebase _portefeuilleFirebase;   
         private readonly UserAnalytique _analytique;
-        public AdminController (ITransactionRepository transactionRepository, UserAnalytique userAnalytique, IPorteFeuilleRepository portefeuille)
+        private readonly IMapper _mapper;
+        public AdminController (ITransactionRepository transactionRepository,CrudPortefeuilleFirebase porte,ExternalApiService externalService,IMapper mapper,TokenValidator tokenValid, UserAnalytique userAnalytique, IPorteFeuilleRepository portefeuille, CrudTransactionFirebase crudTransactionFirebase)
         {
             _transactionRepository = transactionRepository;
             _porteFeuilleRepository = portefeuille;
             _analytique = userAnalytique;
+            _crudTransactionFirebase = crudTransactionFirebase;
+            _portefeuilleFirebase = porte;
+            _tokenValidator = tokenValid;
+            _externalApiService = externalService;
+            _mapper = mapper;
         }
 
         [HttpGet("transaction")]
@@ -148,6 +157,8 @@ namespace Backend_Crypto.Controllers
             }
             _porteFeuilleRepository.UpdatePortefeuille(portefeuille);
             _transactionRepository.ChangeEtat(transaction, Status.Valid);
+            _crudTransactionFirebase.UpdateTransacAsync(_mapper.Map<TransactionFirebaseDto>(transaction));
+            _portefeuilleFirebase.UpdatePortefeuilleAsync(_mapper.Map<PortefeuilleFirebaseDto>(transaction.PortefeuilleOwner));
             return Ok("Transaction valider.");
         }
 

@@ -2,5 +2,6 @@
 
 Projet gestion crypto
 Pour faire marcher le projet :
+=> allumez docker
 => mettez vous dans le repertoire principale
-=> puis dans la ligne de commande = docker-compose up -d
+=> puis dans la ligne de commande taper "docker-compose up -d"

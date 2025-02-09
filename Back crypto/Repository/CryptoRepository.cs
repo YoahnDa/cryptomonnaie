@@ -38,6 +38,12 @@ namespace Backend_Crypto.Repository
             return prix;
         }
 
+        public HistoriquePrix GetFirstHisto(int idCrypto)
+        {
+            Crypto crypto = GetCrypto(idCrypto);
+            return crypto.Historiques.First();
+        }
+
         public bool CreateCrypto(CryptoCreateData crypto)
         {
             var newCrypto = new Crypto()

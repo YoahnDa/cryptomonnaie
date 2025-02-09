@@ -46,6 +46,11 @@ namespace Backend_Crypto.Repository
             return Save();
         }
 
+        public Favoris getFavoris(int idCrypto, int idUser)
+        {
+            return _dataContext.Favoris.FirstOrDefault(f => f.idUser == idUser && f.idCrypto == idCrypto);
+        }
+
         public bool Save()
         {
             var saved = _dataContext.SaveChanges();

@@ -27,8 +27,12 @@ namespace Backend_Crypto.Controllers
         private readonly ExternalApiService _externalApiService;
         private readonly IAuthTokenRepository _tokenRepository;
         private readonly IStockPortefeuilleRepository _stockPortefeuilleRepository;
+        private readonly CrudTransactionFirebase _crudTransactionFirebase;
         private readonly IMapper _mapper;
-        public PortefeuilleController(IPorteFeuilleRepository portefeuilleRepository, ITokenValidator tokenValidator , ExternalApiService apiService , IMapper mapper , ITransactionRepository transaction, ICryptoRepository cryptoRepository, UserAnalytique analyse, IStockPortefeuilleRepository stock)
+        private readonly CrudPortefeuilleFirebase _crudPortefeuille;
+        private readonly CrudOrdreFirebase _crudOrdre;
+        private readonly CrudStockFirebase _crudStock;
+        public PortefeuilleController(IPorteFeuilleRepository portefeuilleRepository,CrudStockFirebase stocks,CrudOrdreFirebase crudOrdre,IAuthTokenRepository token, ITokenValidator tokenValidator , ExternalApiService apiService , IMapper mapper , ITransactionRepository transaction, ICryptoRepository cryptoRepository, UserAnalytique analyse,IStockPortefeuilleRepository stock,CrudTransactionFirebase crudTrans,CrudPortefeuilleFirebase porte)
         {
             _portefeuilleRepository = portefeuilleRepository;
             _stockPortefeuilleRepository = stock;
@@ -38,6 +42,11 @@ namespace Backend_Crypto.Controllers
             _externalApiService = apiService;
             _analyser = analyse;
             _mapper = mapper;
+            _tokenRepository = token;
+            _crudTransactionFirebase = crudTrans;
+            _crudPortefeuille = porte;
+            _crudStock = stocks;
+            _crudOrdre = crudOrdre;
         }
 
         [HttpGet]
@@ -196,6 +205,7 @@ namespace Backend_Crypto.Controllers
                     if (!_portefeuilleRepository.PortefeuilleExiste(user["id"].ToObject<int>()))
                     {
                         _portefeuilleRepository.CreatePortefeuille(user["id"].ToObject<int>());
+                        _crudPortefeuille.CreatePortefeuilleAsync(_mapper.Map<PortefeuilleFirebaseDto>(_portefeuilleRepository.GetPortefeuille(user["id"].ToObject<int>())));
                     }
                     return StatusCode(200, tokenRetour);
                 }
@@ -337,8 +347,9 @@ namespace Backend_Crypto.Controllers
                         CryptoOrdre = _cryptoRepository.GetCrypto(data.idCrypto)
                     }
                 };
-
                 _tokenRepository.CreateToken(transac, user["username"].ToString(), user["idEmail"]["value"].ToString());
+                _crudTransactionFirebase.CreateTransacAsync(_mapper.Map<TransactionFirebaseDto>(transac));
+                _crudOrdre.CreateOrdreAsync(_mapper.Map<OrdreFirebaseDto>(transac.Ordre));
                 return Ok(new { message = "Achat enregistré avec succès en attente de votre validation par email." });
 
             }
@@ -404,8 +415,9 @@ namespace Backend_Crypto.Controllers
                         CryptoOrdre = _cryptoRepository.GetCrypto(data.idCrypto)
                     }
                 };
-
                 _tokenRepository.CreateToken(transac, user["username"].ToString(), user["idEmail"]["value"].ToString());
+                _crudTransactionFirebase.CreateTransacAsync(_mapper.Map<TransactionFirebaseDto>(transac));
+                _crudOrdre.CreateOrdreAsync(_mapper.Map<OrdreFirebaseDto>(transac.Ordre));
                 return Ok(new { message = "Vente enregistré avec succès en attente de votre validation par email." });
 
             }
@@ -443,11 +455,14 @@ namespace Backend_Crypto.Controllers
                 if (!_portefeuilleRepository.HaveCrypto(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto))
                 {
                     _portefeuilleRepository.AddStockPortefeuille(transaction.Ordre.CryptoOrdre,transaction.PortefeuilleOwner, transaction.Ordre.AmountCrypto);
+                    _crudStock.CreateStockAsync(_mapper.Map<StockFirebaseDto>(_portefeuilleRepository.getStock(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto)));
                 }
                 _portefeuilleRepository.ExchangeFond(transaction.PortefeuilleOwner, transaction.fond, true);
                 var stockPort = _portefeuilleRepository.getStock(transaction.PortefeuilleOwner.IdUser, transaction.Ordre.IdCrypto);
                 stockPort.Stock += transaction.Ordre.AmountCrypto;
                 _stockPortefeuilleRepository.updateStock(stockPort);
+                _crudTransactionFirebase.UpdateTransacAsync(_mapper.Map<TransactionFirebaseDto>(transaction));
+                _crudStock.UpdateStockAsync(_mapper.Map<StockFirebaseDto>(stockPort));
                 return RedirectToAction("Success", "Transaction", new { message = "Votre achat a été validé avec succès !" });
             }
             else if(transaction.Type == TypeTransaction.Vente)
@@ -467,12 +482,16 @@ namespace Backend_Crypto.Controllers
                 stockPort.Stock -= transaction.Ordre.AmountCrypto;
                 if(stockPort.Stock <= 0)
                 {
+                    _crudStock.DeleteStockAsync(stockPort.IdStock.ToString());
                     _stockPortefeuilleRepository.removeStock(stockPort);
                 }
                 else
                 {
                     _stockPortefeuilleRepository.updateStock(stockPort);
+                    _crudStock.UpdateStockAsync(_mapper.Map<StockFirebaseDto>(stockPort));
                 }
+                _crudTransactionFirebase.UpdateTransacAsync(_mapper.Map<TransactionFirebaseDto>(transaction));
+                _crudPortefeuille.UpdatePortefeuilleAsync(_mapper.Map<PortefeuilleFirebaseDto>(transaction.PortefeuilleOwner));
                 return RedirectToAction("Success", "Transaction", new { message = "Votre vente a été validé avec succès !" });
             }
             return RedirectToAction("Error", "Transaction", new { message = "Transaction invalide ." });

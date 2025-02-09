@@ -1,4 +1,6 @@
-﻿using Backend_Crypto.Data;
+﻿using AutoMapper;
+using Backend_Crypto.Data;
+using Backend_Crypto.Dto;
 using Backend_Crypto.Interfaces;
 using Backend_Crypto.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +40,9 @@ namespace Backend_Crypto.Services
                 {
                     var cryptoRepository = scope.ServiceProvider.GetRequiredService<ICryptoRepository>();
                     var historiqueRepository = scope.ServiceProvider.GetRequiredService<IHistoriqueRepository>();
+                    var histoFirebase = scope.ServiceProvider.GetRequiredService<CrudHistoriquePrixFirebase>();
+                    var cryptoFirebase = scope.ServiceProvider.GetRequiredService<CrudCryptoFirebase>();
+                    var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
                     var context = scope.ServiceProvider.GetRequiredService<DataContext>();
 
                     var cryptos = await cryptoRepository.GetAsynCrypto();
@@ -60,6 +65,8 @@ namespace Backend_Crypto.Services
                             PrixCrypto = (double)newPrice
                         };
                         historiqueRepository.CreateHistorique(historiquePrix);
+                        histoFirebase.CreateHistoriqueAsync(mapper.Map<HistoriquePrixFirebaseDto>(historiquePrix));
+                        cryptoFirebase.UpdateCryptoAsync(mapper.Map<CryptoFirebaseDto>(historiquePrix.CryptoChange));
                     }
 
                     _logger.LogInformation($"Prix des cryptos mis à jour à {DateTime.Now}");

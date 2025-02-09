@@ -1,4 +1,5 @@
-﻿using Backend_Crypto.Data;
+﻿using AutoMapper;
+using Backend_Crypto.Data;
 using Backend_Crypto.Dto;
 using Backend_Crypto.Interfaces;
 using Backend_Crypto.Models;
@@ -15,16 +16,19 @@ namespace Backend_Crypto.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly ExternalApiService _externalApiService;
         private readonly IFavorisRepository _favorisRepository;
+        private readonly CrudFavorisFirebase _crudFavs;
         private readonly ICryptoRepository _cryptoRepository;
         private readonly DataContext _context;
+        private readonly IMapper _mapper;
 
-        public UserAnalytique(IPorteFeuilleRepository porteFeuilleRepository, ITransactionRepository transactionRepository, ICryptoRepository cryptoRepository,IFavorisRepository favorisRepository, DataContext context)
+        public UserAnalytique(IPorteFeuilleRepository porteFeuilleRepository, ITransactionRepository transactionRepository, ICryptoRepository cryptoRepository,IFavorisRepository favorisRepository, DataContext context, CrudFavorisFirebase crudFavs)
         {
             _porteFeuilleRepository = porteFeuilleRepository;
             _transactionRepository = transactionRepository;
             _cryptoRepository = cryptoRepository;
             _favorisRepository = favorisRepository;
             _context = context;
+            _crudFavs = crudFavs;
         }
 
         public async Task<List<TransactionDtoAdmin>> getTransac(List<TypeTransaction> type,string token)
@@ -73,11 +77,16 @@ namespace Backend_Crypto.Services
         {
             if(_favorisRepository.isFavoris(idUser, idCrypto))
             {
+                var favs = _favorisRepository.getFavoris(idUser, idCrypto);
+                _crudFavs.DeleteFavsAsync(favs.idCrypto.ToString());
                 return _favorisRepository.removeFavoris(idCrypto, idUser);
             }
             else
             {
-                return _favorisRepository.CreateFavoris(idCrypto, idUser);
+                var isUp = _favorisRepository.CreateFavoris(idCrypto, idUser);
+                var favs = _favorisRepository.getFavoris(idUser, idCrypto);
+                _crudFavs.CreateFavsAsync(_mapper.Map<FavorisDto>(favs));
+                return isUp;
             }
         }
 
