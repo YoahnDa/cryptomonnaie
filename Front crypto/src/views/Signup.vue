@@ -85,60 +85,37 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import apiClient from '../plugins/axios'; // Importez Axios
-import axios, { AxiosError } from 'axios'; // Importer Axios et son type
+import apiClient from '../plugins/axios'; // Import d'Axios
 
+const router = useRouter();
 const username = ref('');
 const email = ref('');
 const password = ref('');
-const router = useRouter();
 
-// Validation du formulaire
-const validateForm = () => {
-    if (!username.value || !email.value || !password.value) {
-        alert('Veuillez remplir tous les champs.');
-        return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-        alert('Veuillez entrer une adresse email valide.');
-        return false;
-    }
-    if (password.value.length < 6) {
-        alert('Le mot de passe doit contenir au moins 6 caractères.');
-        return false;
-    }
-    return true;
-};
-
-// Gestion de l'inscription
+// ✅ Fonction d'inscription
 const handleSignup = async () => {
-    if (!validateForm()) return;
+  if (!username.value || !email.value || !password.value) {
+    alert('Veuillez remplir tous les champs.');
+    return;
+  }
 
-    try {
-        const response = await apiClient.post('/auth/register', {
-            username: username.value,
-            email: email.value,
-            password: password.value,
-        });
+  try {
+    const response = await apiClient.post('/auth/register', {
+      username: username.value,
+      email: email.value,
+      password: password.value,
+    });
 
-        console.log('Réponse du backend:', response.data);
-        alert('Inscription réussie !');
-        router.push('/login'); // Redirige vers la page de connexion
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-          console.error('Erreur lors de l\'inscription:', error.response?.data || error.message);
-          alert('Échec de l\'inscription. Veuillez réessayer.');
-        } else if (error instanceof Error) {
-            console.error('Erreur générale lors de la demande de renvoi du PIN:', error.message);
-            alert('Une erreur est survenue. Veuillez réessayer.');
-        } else {
-            console.error('Erreur inconnue lors de la demande de renvoi du PIN:', error);
-        }
-    }
+    console.log('Inscription réussie:', response.data);
+    alert('Inscription réussie ! Vérifiez votre email pour confirmation.');
+    router.push('/login');
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } };
+    alert(error.response?.data?.message || "Erreur lors de l'inscription");
+  }
 };
 </script>
 <style scoped>

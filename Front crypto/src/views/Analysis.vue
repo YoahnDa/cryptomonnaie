@@ -71,7 +71,7 @@
 
       <!-- Graphique en courbe -->
       <div class="chart-container">
-        <LineChart :data="chartData" :options="chartOptions"/>
+        <LineChart :data="chartData" :options="chartOptions" />
       </div>
     </div>
   </div>
@@ -139,22 +139,21 @@ const chartData = computed(() => {
     ],
   };
 });
-
-// Options du graphique en courbe
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      position: 'bottom' as const,
+      position: 'bottom' as const, // Ajout de "as const" pour corriger l'erreur TypeScript
     },
   },
   scales: {
     y: {
-      beginAtZero: false, // Ne pas commencer à zéro pour une meilleure visualisation
+      beginAtZero: false,
     },
   },
 };
+
 </script>
 
 
