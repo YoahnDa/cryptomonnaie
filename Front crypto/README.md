@@ -103,7 +103,6 @@ Voici le détail des fonctionnalités demandées :
 
 
 
-*npm install axios
 
 
 

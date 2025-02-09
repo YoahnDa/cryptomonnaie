@@ -70,7 +70,7 @@
 import { ref, computed } from 'vue';
 import Sidebar from '../components/Sidebar.vue';
 
-// Type pour un objet crypto
+// Interface for Crypto objects
 interface Crypto {
   id: number;
   rank: number;
@@ -84,7 +84,7 @@ interface Crypto {
   favorite: boolean;
 }
 
-// Données des cryptos
+// Reactive state for cryptos
 const cryptos = ref<Crypto[]>([
   {
     id: 1,
@@ -124,40 +124,40 @@ const cryptos = ref<Crypto[]>([
   },
 ]);
 
-// État de tri
-const sortKey = ref<string>('');
+// Sorting state
+const sortKey = ref<keyof Crypto>('rank'); // Valid keys of Crypto
 const sortOrder = ref<number>(1);
 
-// Tri des cryptos
+// Computed property for sorted cryptos
 const filteredCryptos = computed(() => {
   return [...cryptos.value].sort((a, b) => {
-    if (a[sortKey.value as keyof Crypto] < b[sortKey.value as keyof Crypto]) return -1 * sortOrder.value;
-    if (a[sortKey.value as keyof Crypto] > b[sortKey.value as keyof Crypto]) return 1 * sortOrder.value;
+    const key = sortKey.value; // Type-safe key
+    if (a[key] < b[key]) return -1 * sortOrder.value;
+    if (a[key] > b[key]) return 1 * sortOrder.value;
     return 0;
   });
 });
 
-// Fonction de tri
-const sortBy = (key: string): void => {
+// Sorting function
+const sortBy = (key: keyof Crypto) => {
   if (sortKey.value === key) {
-    sortOrder.value *= -1; // Inverser l'ordre si la même clé est cliquée
+    sortOrder.value *= -1; // Reverse order
   } else {
     sortKey.value = key;
-    sortOrder.value = 1; // Réinitialiser l'ordre
+    sortOrder.value = 1; // Reset order
   }
 };
 
-// Ajouter/Retirer des favoris
-const toggleFavorite = (crypto: Crypto): void => {
+// Toggle favorite
+const toggleFavorite = (crypto: Crypto) => {
   crypto.favorite = !crypto.favorite;
 };
 
-// Formatage des grands nombres
-const formatNumber = (value: number): string => {
+// Format large numbers
+const formatNumber = (value: number) => {
   return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value);
 };
-</script>
-<style scoped>
+</script><style scoped>
 /* Styles principaux */
 .real-time {
   display: flex;
